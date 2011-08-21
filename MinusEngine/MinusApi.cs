@@ -216,6 +216,7 @@ namespace BiasedBit.MinusEngine
             {
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(ub.Uri);
                 request.Method = "POST";
+                request.ContentType = "application/x-www-form-urlencoded";
 
                 ThreadPool.QueueUserWorkItem((object state) =>
                 {
