@@ -1,9 +1,0 @@
-*.suo
-*.csproj.user
-MinusEngine/bin
-MinusEngine/obj
-MinusEngineTestApp/bin
-MinusEngineTestApp/obj
-MinusEngine-WP7/bin
-MinusEngine-WP7/obj
-
