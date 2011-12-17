@@ -1,0 +1,33 @@
+MinusAPIv2 Changelog
+
+Version 0.1.1
+17-Dec-2011
+	* Fixed
+		* oAuth infinite loop
+	* Added
+		* Refresh oAuthorization
+		* Get Followers/Follwing
+	* TODO
+		* Add support for getting user's folder list.
+		* Add support for getting user's file list.
+		* Add support for adding a new followee.
+		* Add support for getting user's messages/sending messages.
+		* Add support for feeds.
+
+Version 0.1.0
+16-Dec-2011
+	* Added
+		* oAuthorization support: Authorize.
+		* Folder support: Get, Modify, Delete, Create.
+			* Delete needs work
+		* File support: Get, Modify, Delete, Upload.
+			* Delete needs work
+	* TODO
+		* Add support for getting user's folder list.
+		* Add support for getting user's file list.
+		* Add support for getting user's follower list.
+		* Add support for getting user's following list/adding a new followee.
+		* Add support for getting user's messages/sending messages.
+		* Add support for feeds.
+		* Add support for refreshing oAuthorization.
+	

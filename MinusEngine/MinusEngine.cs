@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -18,10 +19,8 @@ namespace MinusEngine
 
     #region Handler Delegates
 
-    // ReSharper disable InconsistentNaming
     public delegate void oAuthCompleteHandler(MinusEngine sender, oAuthResult result);
     public delegate void oAuthFailedHandler(MinusEngine sender, Exception e);
-    // ReSharper restore InconsistentNaming
 
     public delegate void UploadItemCompleteHandler(MinusEngine sender, UploadItemResult result);
     public delegate void UploadItemFailedHandler(MinusEngine sender, Exception e);
@@ -41,25 +40,27 @@ namespace MinusEngine
     public delegate void GetFilesCompleteHandler(MinusEngine sender, GetFilesResult result);
     public delegate void GetFilesFailedHandler(MinusEngine sender, Exception e);
 
+    public delegate void GetFollowersCompleteHandler(MinusEngine sender, List<GetFollowResult> result);
+    public delegate void GetFollowersFailedHandler(MinusEngine sender, Exception e);
+
+    public delegate void GetFollowingCompleteHandler(MinusEngine sender, List<GetFollowResult> result);
+    public delegate void GetFollowingFailedHandler(MinusEngine sender, Exception e);
+
     #endregion
 
     public class MinusEngine
     {
 
-        // ReSharper disable InconsistentNaming
         public static readonly String BASE_URL = "https://minus.com/";
         public static readonly Uri AUTH_URL = new Uri(BASE_URL + "oauth/token");
         public static readonly Uri FOLDERS_URL = new Uri(BASE_URL + "api/v2/folders/");
         public static readonly Uri USERS_URL = new Uri(BASE_URL + "api/v2/users/");
         public static readonly Uri FILES_URL = new Uri(BASE_URL + "api/v2/files/");
-        // ReSharper restore InconsistentNaming
 
         #region Handler Events
 
-        // ReSharper disable InconsistentNaming
         public event oAuthCompleteHandler oAuthComplete;
         public event oAuthFailedHandler oAuthFailed;
-        // ReSharper restore InconsistentNaming
 
         public event UploadItemCompleteHandler UploadItemComplete;
         public event UploadItemFailedHandler UploadItemFailed;
@@ -79,13 +80,17 @@ namespace MinusEngine
         public event GetFilesCompleteHandler GetFilesComplete;
         public event GetFilesFailedHandler GetFilesFailed;
 
+        public event GetFollowersCompleteHandler GetFollowersComplete;
+        public event GetFollowersFailedHandler GetFollowersFailed;
+
+        public event GetFollowingCompleteHandler GetFollowingComplete;
+        public event GetFollowingFailedHandler GetFollowingFailed;
+
         #endregion
 
         #region Authorization
 
-        // ReSharper disable InconsistentNaming
         public void oAuth(String username, String password, String clientId, String secret, String access)
-        // ReSharper restore InconsistentNaming
         {
             StringBuilder data = new StringBuilder();
             data.Append("grant_type=password&client_id=" + clientId + "&client_secret=" + secret +
@@ -100,7 +105,7 @@ namespace MinusEngine
                 {
                     try
                     {
-                        client.UploadString(AUTH_URL, "POST", data.ToString());
+                        client.UploadStringAsync(AUTH_URL, "POST", data.ToString());
                     }
                     catch (Exception e)
                     {
@@ -115,7 +120,7 @@ namespace MinusEngine
                 TriggeroAuthFailed(e);
             }
 
-            client.DownloadStringCompleted += delegate(object sender, DownloadStringCompletedEventArgs e)
+            client.UploadStringCompleted += delegate(object sender, UploadStringCompletedEventArgs e)
             {
                 if (e.Error != null)
                 {
@@ -126,6 +131,51 @@ namespace MinusEngine
 
                 oAuthResult result = JsonConvert.DeserializeObject<oAuthResult>(e.Result);
                 Debug.WriteLine("oAuth operation successful: " + result);
+                TriggeroAuthComplete(result);
+            };
+        }
+
+        public void oAuthRefresh(String clientId, String secret, String refreshToken, String access)
+        {
+            StringBuilder data = new StringBuilder();
+            data.Append("grant_type=refresh_token&client_id=" + clientId + "&client_secret=" + secret +
+                               "&scope=" + access + "&refresh_token=" + refreshToken);
+
+            CookieAwareWebClient client = new CookieAwareWebClient();
+            client.Headers["Content-Type"] = "application/x-www-form-urlencoded";
+
+            try
+            {
+                ThreadPool.QueueUserWorkItem(state =>
+                {
+                    try
+                    {
+                        client.UploadStringAsync(AUTH_URL, "POST", data.ToString());
+                    }
+                    catch (Exception e)
+                    {
+                        TriggeroAuthFailed(e);
+                    }
+                }
+                );
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
+                TriggeroAuthFailed(e);
+            }
+
+            client.UploadStringCompleted += delegate(object sender, UploadStringCompletedEventArgs e)
+            {
+                if (e.Error != null)
+                {
+                    Debug.WriteLine("Refresh oAuth operation failed: " + e.Error.Message);
+                    TriggeroAuthFailed(e.Error);
+                    return;
+                }
+
+                oAuthResult result = JsonConvert.DeserializeObject<oAuthResult>(e.Result);
+                Debug.WriteLine("Refresh oAuth operation successful: " + result);
                 TriggeroAuthComplete(result);
             };
         }
@@ -648,6 +698,102 @@ namespace MinusEngine
 
         #endregion
 
+        #region Users
+
+        #region Gets
+
+        public void GetFollowers(String username, String accessToken)
+        {
+            CookieAwareWebClient client = new CookieAwareWebClient();
+            client.Headers["Content-Type"] = "application/x-www-form-urlencoded";
+
+            Uri getFollowers = new Uri(USERS_URL + username + "/followers?bearer_token=" + accessToken);
+
+            try
+            {
+                ThreadPool.QueueUserWorkItem(state =>
+                {
+                    try
+                    {
+                        client.DownloadStringAsync(getFollowers);
+                    }
+                    catch (WebException e)
+                    {
+                        TriggerGetFollowersFailed(e);
+                    }
+                }
+                );
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
+                TriggerGetFollowersFailed(e);
+            }
+
+            client.DownloadStringCompleted += delegate(object sender, DownloadStringCompletedEventArgs e)
+            {
+                if (e.Error != null)
+                {
+                    Debug.WriteLine("Get Followers operation failed: " + e.Error.Message);
+                    TriggerGetFollowersFailed(e.Error);
+                    return;
+                }
+
+                List<GetFollowResult> result =
+                    JsonConvert.DeserializeObject<List<GetFollowResult>>(GetStringInBetween("[", "]", e.Result, true, true));
+                Debug.WriteLine("Get Followers operation successful: " + result);
+                TriggerGetFollowersComplete(result);
+            }; 
+        }
+
+        public void GetFollowing(String username, String accessToken)
+        {
+            CookieAwareWebClient client = new CookieAwareWebClient();
+            client.Headers["Content-Type"] = "application/x-www-form-urlencoded";
+
+            Uri getFollowing = new Uri(USERS_URL + username + "/following?bearer_token=" + accessToken);
+
+            try
+            {
+                ThreadPool.QueueUserWorkItem(state =>
+                {
+                    try
+                    {
+                        client.DownloadStringAsync(getFollowing);
+                    }
+                    catch (WebException e)
+                    {
+                        TriggerGetFollowingFailed(e);
+                    }
+                }
+                );
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
+                TriggerGetFollowingFailed(e);
+            }
+
+            client.DownloadStringCompleted += delegate(object sender, DownloadStringCompletedEventArgs e)
+            {
+                if (e.Error != null)
+                {
+                    Debug.WriteLine("Get Following operation failed: " + e.Error.Message);
+                    TriggerGetFollowingFailed(e.Error);
+                    return;
+                }
+
+                List<GetFollowResult> result =
+                    JsonConvert.DeserializeObject<List<GetFollowResult>>(GetStringInBetween("[", "]", e.Result, true, true));
+                Debug.WriteLine("Get Following operation successful: " + result);
+                TriggerGetFollowingComplete(result);
+            };  
+        }
+
+        #endregion
+
+        #endregion
+
         #region Helpers
 
         private static void PushData(Stream input, Stream output, byte[] imageBuffer)
@@ -659,6 +805,40 @@ namespace MinusEngine
             {
                 output.Write(buffer, 0, bytesRead);
             }
+        }
+
+        public static string GetStringInBetween(string strBegin, string strEnd, string strSource, bool includeBegin = false, bool includeEnd = false)
+        {
+            string[] result = { "", "" };
+            //Gets the location of the Begining String
+            int iIndexOfBegin = strSource.IndexOf(strBegin);
+            if (iIndexOfBegin != -1)
+            {
+                //Finds out the location right before Begining String
+                if (includeBegin)
+                { iIndexOfBegin -= strBegin.Length; }
+                strSource = strSource.Substring(iIndexOfBegin
+                    + strBegin.Length);
+                //Gets the location fo the End String
+                int iEnd = strSource.IndexOf(strEnd);
+
+                if (iEnd != -1)
+                {
+                    //Finds out the location right after the End String
+                    if (includeEnd)
+                    { iEnd += strEnd.Length; }
+                    //Sets result[0] as the string between the two given strings
+                    result[0] = strSource.Substring(0, iEnd);
+                    if (iEnd + strEnd.Length < strSource.Length)
+                    { result[1] = strSource.Substring(iEnd + strEnd.Length); }
+                }
+            }
+            else
+            {
+                //Sets result[1] as the rest of the String leftover
+                result[1] = strSource;
+            }
+            return result[0];
         }
 
         #endregion
@@ -774,6 +954,38 @@ namespace MinusEngine
             if (GetFilesFailed != null)
             {
                 GetFilesFailed.Invoke(this, e);
+            }
+        }
+
+        private void TriggerGetFollowersComplete(List<GetFollowResult> result)
+        {
+            if (GetFollowersComplete != null)
+            {
+                GetFollowersComplete.Invoke(this, result);
+            }
+        }
+
+        private void TriggerGetFollowersFailed(Exception e)
+        {
+            if (GetFollowersFailed != null)
+            {
+                GetFollowersFailed.Invoke(this, e);
+            }
+        }
+
+        private void TriggerGetFollowingComplete(List<GetFollowResult> result)
+        {
+            if (GetFollowingComplete != null)
+            {
+                GetFollowingComplete.Invoke(this, result);
+            }
+        }
+
+        private void TriggerGetFollowingFailed(Exception e)
+        {
+            if (GetFollowingFailed != null)
+            {
+                GetFollowingFailed.Invoke(this, e);
             }
         }
 
