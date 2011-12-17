@@ -5,10 +5,10 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{03D1AA9A-FFCC-4807-87C7-833FC8CA394A}</ProjectGuid>
+    <ProjectGuid>{0CD9A631-FDC7-4619-8128-D52C540D8A2B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>BiasedBit.MinusEngine</RootNamespace>
+    <RootNamespace>MinusEngine</RootNamespace>
     <AssemblyName>MinusEngine</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -30,12 +30,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>.\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\..\..\Desktop\Miners-MinusEngine-a9c9249\MinusEngine\bin\Debug\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -46,20 +43,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Cancellable.cs" />
     <Compile Include="CookieAwareWebClient.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="GalleryResult.cs" />
-    <Compile Include="MyGalleriesResult.cs" />
-    <Compile Include="SignInResult.cs" />
-    <Compile Include="CreateGalleryResult.cs" />
-    <Compile Include="MinusApi.cs" />
+    <Compile Include="CreateFolderResult.cs" />
+    <Compile Include="FolderResult.cs" />
+    <Compile Include="FileResult.cs" />
+    <Compile Include="GetFilesResult.cs" />
+    <Compile Include="GetFoldersResult.cs" />
+    <Compile Include="MinusEngine.cs" />
+    <Compile Include="oAuthResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="GetItemsResult.cs" />
     <Compile Include="UploadItemResult.cs" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
