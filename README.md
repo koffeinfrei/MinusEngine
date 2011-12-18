@@ -1,7 +1,6 @@
 MinusEngine
 ===========
 A  C# library to access [Minus API](http://minus.com/pages/api).
-Also includes support for Windows Phone 7
 
 License
 -------
