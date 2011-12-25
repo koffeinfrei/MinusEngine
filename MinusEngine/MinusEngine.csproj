@@ -46,16 +46,13 @@
     <Compile Include="CookieAwareWebClient.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="CreateFolderResult.cs" />
     <Compile Include="FolderResult.cs" />
     <Compile Include="FileResult.cs" />
-    <Compile Include="GetFilesResult.cs" />
-    <Compile Include="GetFoldersResult.cs" />
-    <Compile Include="GetFollowResult.cs" />
+    <Compile Include="FollowResult.cs" />
     <Compile Include="MinusEngine.cs" />
     <Compile Include="oAuthResult.cs" />
+    <Compile Include="PaginationResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UploadItemResult.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

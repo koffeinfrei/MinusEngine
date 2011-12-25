@@ -11,7 +11,7 @@ namespace MinusEngine
 
         }
 
-        public FolderResult(String files, String viewCount, String dateUpdated, String name, String creator, String url, String created, String[] itemOrdering, int lastUpdatedAgo, int createdAgo, String thumbnailUrl, int fileCount, Boolean isPublic, String id)
+        public FolderResult(String files, String viewCount, String dateUpdated, String name, String creator, String url, String created, String[] itemOrdering, Int32 lastUpdatedAgo, Int32 createdAgo, String thumbnailUrl, Int32 fileCount, Boolean isPublic, String id)
         {
             this.Files = files;
             this.ViewCount = viewCount;
@@ -53,17 +53,17 @@ namespace MinusEngine
         [JsonProperty("item_ordering")]
         public String[] ItemOrdering { get; set; }
 
-        [JsonProperty("last_updated")]
-        public int LastUpdated { get; set; }
+        [JsonProperty("last_updated_ago")]
+        public Int32 LastUpdated { get; set; }
 
         [JsonProperty("created_ago")]
-        public int CreatedAgo { get; set; }
+        public Int32 CreatedAgo { get; set; }
 
         [JsonProperty("thumbnail_url")]
         public String ThumbnailUrl { get; set; }
 
         [JsonProperty("file_count")]
-        public int FileCount { get; set; }
+        public Int32 FileCount { get; set; }
 
         [JsonProperty("is_public")]
         public Boolean IsPublic { get; set; }
@@ -74,7 +74,7 @@ namespace MinusEngine
         #region Low level overrides
         public override string ToString()
         {
-            return new StringBuilder("UploadItemResult{")
+            return new StringBuilder("FolderResult{")
                 .Append("Files=").Append(this.Files)
                 .Append(", ViewCount=").Append(this.ViewCount)
                 .Append(", DateLastUpdated=").Append

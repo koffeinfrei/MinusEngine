@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace MinusEngine
 {
-    public class GetFollowResult
+    public class FollowResult
     {
         #region Fields
 
@@ -57,7 +57,7 @@ namespace MinusEngine
 
         #endregion
 
-        public GetFollowResult(String username, String folders, String displayName, String description, String url, Int32 visits, String avatar, String fbUsername, String followers, Int32 karma, String following, Int32 shared, String fbProfileLink, String slug, String twitterScreenName)
+        public FollowResult(String username, String folders, String displayName, String description, String url, Int32 visits, String avatar, String fbUsername, String followers, Int32 karma, String following, Int32 shared, String fbProfileLink, String slug, String twitterScreenName)
         {
             Username = username;
             Folders = folders;
@@ -73,7 +73,7 @@ namespace MinusEngine
             Shared = shared;
             FbProfileLink = fbProfileLink;
             Slug = slug;
-            TwitterScreenName = twitterScreenName;
+            TwitterScreenName = twitterScreenName;  
         }
 
         #region Low level overrides

@@ -1,5 +1,24 @@
 MinusAPIv2 Changelog
 
+Version 0.2.1
+24-Dec-2011
+	*Fixed
+		* Broken upload
+		* Redundent classes removed
+		* Trigger typos
+	* Added
+		* Pagination support
+			* Folder List/File List/Followers/Following
+		* Page Support
+			* Folder List/File List/Followers/Following
+		* Get Folder List
+		* Get File List
+	* TODO
+		* Add support for adding a new followee.
+		* Add support for getting user's messages/sending messages.
+		* Add support for feeds.
+		* Make better delete methods
+
 Version 0.1.1
 17-Dec-2011
 	* Fixed

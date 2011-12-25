@@ -2,48 +2,49 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace MinusEngine
 {
-
-    #region TODO
-
-    //TODO: Complete GetFoldersResult Class
-    //TODO: Complete GetFilesResult Class
-
-    #endregion
 
     #region Handler Delegates
 
     public delegate void oAuthCompleteHandler(MinusEngine sender, oAuthResult result);
     public delegate void oAuthFailedHandler(MinusEngine sender, Exception e);
 
-    public delegate void UploadItemCompleteHandler(MinusEngine sender, UploadItemResult result);
+    public delegate void UploadItemCompleteHandler(MinusEngine sender, FileResult result);
     public delegate void UploadItemFailedHandler(MinusEngine sender, Exception e);
 
-    public delegate void CreateFolderCompleteHandler(MinusEngine sender, CreateFolderResult result);
+    public delegate void CreateFolderCompleteHandler(MinusEngine sender, FolderResult result);
     public delegate void CreateFolderFailedHandler(MinusEngine sender, Exception e);
 
-    public delegate void GetFoldersCompleteHandler(MinusEngine sender, GetFoldersResult result);
-    public delegate void GetFoldersFailedHandler(MinusEngine sender, Exception e);
+    public delegate void GetFolderListCompleteHandler(MinusEngine sender, IList<FolderResult> result, PaginationResult pResult);
+    public delegate void GetFolderListFailedHandler(MinusEngine sender, Exception e);
 
-    public delegate void FolderCompleteHandler(MinusEngine sender, FolderResult result);
-    public delegate void FolderFailedHandler(MinusEngine sender, Exception e);
+    public delegate void GetFolderCompleteHandler(MinusEngine sender, FolderResult result);
+    public delegate void GetFolderFailedHandler(MinusEngine sender, Exception e);
 
-    public delegate void FileCompleteHandler(MinusEngine sender, FileResult result);
-    public delegate void FileFailedHandler(MinusEngine sender, Exception e);
+    public delegate void ModifyFolderCompleteHandler(MinusEngine sender, FolderResult result);
+    public delegate void ModifyFolderFailedHandler(MinusEngine sender, Exception e);
 
-    public delegate void GetFilesCompleteHandler(MinusEngine sender, GetFilesResult result);
-    public delegate void GetFilesFailedHandler(MinusEngine sender, Exception e);
+    public delegate void GetFileCompleteHandler(MinusEngine sender, FileResult result);
+    public delegate void GetFileFailedHandler(MinusEngine sender, Exception e);
 
-    public delegate void GetFollowersCompleteHandler(MinusEngine sender, List<GetFollowResult> result);
+    public delegate void GetFileListCompleteHandler(MinusEngine sender, IList<FileResult> result, PaginationResult pResult);
+    public delegate void GetFileListFailedHandler(MinusEngine sender, Exception e);
+
+    public delegate void ModifyFileCompleteHandler(MinusEngine sender, FileResult result);
+    public delegate void ModifyFileFailedHandler(MinusEngine sender, Exception e);
+
+    public delegate void GetFollowersCompleteHandler(MinusEngine sender, IList<FollowResult> result, PaginationResult pResult);
     public delegate void GetFollowersFailedHandler(MinusEngine sender, Exception e);
 
-    public delegate void GetFollowingCompleteHandler(MinusEngine sender, List<GetFollowResult> result);
+    public delegate void GetFollowingCompleteHandler(MinusEngine sender, IList<FollowResult> result, PaginationResult pResult);
     public delegate void GetFollowingFailedHandler(MinusEngine sender, Exception e);
 
     #endregion
@@ -68,17 +69,23 @@ namespace MinusEngine
         public event CreateFolderCompleteHandler CreateFolderComplete;
         public event CreateFolderFailedHandler CreateFolderFailed;
 
-        public event GetFoldersCompleteHandler GetFoldersComplete;
-        public event GetFoldersFailedHandler GetFoldersFailed;
+        public event GetFolderListCompleteHandler GetFoldersComplete;
+        public event GetFolderListFailedHandler GetFoldersFailed;
 
-        public event FolderCompleteHandler FolderComplete;
-        public event FolderFailedHandler FolderFailed;
+        public event GetFolderCompleteHandler GetFolderComplete;
+        public event GetFolderFailedHandler GetFolderFailed;
 
-        public event FileCompleteHandler FileComplete;
-        public event FileFailedHandler FileFailed;
+        public event ModifyFolderCompleteHandler ModifyFolderComplete;
+        public event ModifyFolderFailedHandler ModifyFolderFailed;
 
-        public event GetFilesCompleteHandler GetFilesComplete;
-        public event GetFilesFailedHandler GetFilesFailed;
+        public event GetFileCompleteHandler GetFileComplete;
+        public event GetFileFailedHandler GetFileFailed;
+
+        public event GetFileListCompleteHandler GetFilesComplete;
+        public event GetFileListFailedHandler GetFilesFailed;
+
+        public event ModifyFileCompleteHandler ModifyFileComplete;
+        public event ModifyFileFailedHandler ModifyFileFailed;
 
         public event GetFollowersCompleteHandler GetFollowersComplete;
         public event GetFollowersFailedHandler GetFollowersFailed;
@@ -186,12 +193,12 @@ namespace MinusEngine
 
         #region Gets
 
-        public void GetFolders(String username, String accessToken)
+        public void GetFolderList(String username, String accessToken, Int32 pageNum)
         {
             CookieAwareWebClient client = new CookieAwareWebClient();
             client.Headers["Content-Type"] = "application/x-www-form-urlencoded";
 
-            Uri getFolders = new Uri(USERS_URL + username + "/folders?bearer_token=" + accessToken);
+            Uri getFolders = new Uri(USERS_URL + username + "/folders?page=" + pageNum + "&bearer_token=" + accessToken);
 
             try
             {
@@ -203,7 +210,7 @@ namespace MinusEngine
                     }
                     catch (WebException e)
                     {
-                        TriggerGetFoldersFailed(e);
+                        TriggerGetFolderListFailed(e);
                     }
                 }
                 );
@@ -211,21 +218,26 @@ namespace MinusEngine
             catch (Exception e)
             {
                 Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
-                TriggerGetFoldersFailed(e);
+                TriggerGetFolderListFailed(e);
             }
 
             client.DownloadStringCompleted += delegate(object sender, DownloadStringCompletedEventArgs e)
             {
                 if (e.Error != null)
                 {
-                    Debug.WriteLine("Get Folders operation failed: " + e.Error.Message);
-                    TriggerCreateFolderFailed(e.Error);
+                    Debug.WriteLine("Get Folder List operation failed: " + e.Error.Message);
+                    TriggerGetFolderListFailed(e.Error);
                     return;
                 }
-                    
-                GetFoldersResult result = JsonConvert.DeserializeObject<GetFoldersResult>(e.Result);
-                Debug.WriteLine("Get Folders operation successful: " + result);
-                TriggerGetFoldersComplete(result);
+
+                PaginationResult pResult = JsonConvert.DeserializeObject<PaginationResult>(e.Result);
+                JObject resultSearch = JObject.Parse(e.Result);
+                IList<JToken> objectResults = resultSearch["results"].Children().ToList();
+                IList<FolderResult> results = objectResults.Select(objectSearch =>
+                    JsonConvert.DeserializeObject<FolderResult>(objectSearch.ToString())).ToList();
+
+                Debug.WriteLine("Get Folder List operation successful: " + results);
+                TriggerGetFolderListComplete(results, pResult);
             };
         }
 
@@ -246,7 +258,7 @@ namespace MinusEngine
                     }
                     catch (WebException e)
                     {
-                        TriggerFolderFailed(e);
+                        TriggerGetFolderFailed(e);
                     }
                 }
                 );
@@ -254,7 +266,7 @@ namespace MinusEngine
             catch (Exception e)
             {
                 Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
-                TriggerFolderFailed(e);
+                TriggerGetFolderFailed(e);
             }
 
             client.DownloadStringCompleted += delegate(object sender, DownloadStringCompletedEventArgs e)
@@ -262,13 +274,13 @@ namespace MinusEngine
                 if (e.Error != null)
                 {
                     Debug.WriteLine("Get Folder operation failed: " + e.Error.Message);
-                    TriggerCreateFolderFailed(e.Error);
+                    TriggerGetFolderFailed(e.Error);
                     return;
                 }
 
                 FolderResult result = JsonConvert.DeserializeObject<FolderResult>(e.Result);
                 Debug.WriteLine("Get Folder operation successful: " + result);
-                TriggerFolderComplete(result);
+                TriggerGetFolderComplete(result);
            };
         }
 
@@ -296,7 +308,7 @@ namespace MinusEngine
                     }
                     catch (Exception e)
                     {
-                        TriggerFolderFailed(e);
+                        TriggerModifyFolderFailed(e);
                     }
                 }
                 );
@@ -304,7 +316,7 @@ namespace MinusEngine
             catch (Exception e)
             {
                 Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
-                TriggerFolderFailed(e);
+                TriggerModifyFolderFailed(e);
             }
 
             client.UploadStringCompleted += delegate(object sender, UploadStringCompletedEventArgs e)
@@ -312,13 +324,13 @@ namespace MinusEngine
                 if (e.Error != null)
                 {
                     Debug.WriteLine("Modify Folder operation failed: " + e.Error.Message);
-                    TriggerFolderFailed(e.Error);
+                    TriggerModifyFolderFailed(e.Error);
                     return;
                 }
 
                 FolderResult result = JsonConvert.DeserializeObject<FolderResult>(e.Result);
                 Debug.WriteLine("Modify Folder operation successful: " + result);
-                TriggerFolderComplete(result);
+                TriggerModifyFolderComplete(result);
            };
         }
 
@@ -372,9 +384,7 @@ namespace MinusEngine
                 {
                     try
                     {
-                        Debug.WriteLine("Before Create Folder");
                         client.UploadStringAsync(createFolder, "POST", data.ToString());
-                        Debug.WriteLine("After Create Folder");
                     }
                     catch (WebException e)
                     {
@@ -397,8 +407,8 @@ namespace MinusEngine
                     TriggerCreateFolderFailed(e.Error);
                     return;
                 }
+                FolderResult result = JsonConvert.DeserializeObject<FolderResult>(e.Result);
 
-                CreateFolderResult result = JsonConvert.DeserializeObject<CreateFolderResult>(e.Result);
                 Debug.WriteLine("Create Folder operation successful: " + result);
                 TriggerCreateFolderComplete(result);
             };
@@ -425,13 +435,11 @@ namespace MinusEngine
                 {
                     try
                     {
-                        Debug.WriteLine("Before Get File");
                         client.DownloadStringAsync(getFolder);
-                        Debug.WriteLine("After Get File");
                     }
                     catch (WebException e)
                     {
-                        TriggerFileFailed(e);
+                        TriggerGetFileFailed(e);
                     }
                 }
                 );
@@ -439,7 +447,7 @@ namespace MinusEngine
             catch (Exception e)
             {
                 Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
-                TriggerFileFailed(e);
+                TriggerGetFileFailed(e);
             }
 
             client.DownloadStringCompleted += delegate(object sender, DownloadStringCompletedEventArgs e)
@@ -447,22 +455,22 @@ namespace MinusEngine
                 if (e.Error != null)
                 {
                     Debug.WriteLine("Get File operation failed: " + e.Error.Message);
-                    TriggerFileFailed(e.Error);
+                    TriggerGetFileFailed(e.Error);
                     return;
                 }
 
                 FileResult result = JsonConvert.DeserializeObject<FileResult>(e.Result);
                 Debug.WriteLine("Get File operation successful: " + result);
-                TriggerFileComplete(result);
+                TriggerGetFileComplete(result);
             };
         }
 
-        public void GetFiles(String folderID, String accessToken)
+        public void GetFileList(String folderID, String accessToken, Int32 pageNum)
         {
             CookieAwareWebClient client = new CookieAwareWebClient();
             client.Headers["Content-Type"] = "application/x-www-form-urlencoded";
 
-            Uri getFiles = new Uri(FOLDERS_URL + folderID + "/files?bearer_token=" + accessToken);
+            Uri getFiles = new Uri(FOLDERS_URL + folderID + "/files?page=" + pageNum + "&bearer_token=" + accessToken);
 
             try
             {
@@ -475,7 +483,7 @@ namespace MinusEngine
                     }
                     catch (WebException e)
                     {
-                        TriggerGetFilesFailed(e);
+                        TriggerGetFileListFailed(e);
                     }
                 }
                 );
@@ -483,21 +491,26 @@ namespace MinusEngine
             catch (Exception e)
             {
                 Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
-                TriggerGetFilesFailed(e);
+                TriggerGetFileListFailed(e);
             }
 
             client.DownloadStringCompleted += delegate(object sender, DownloadStringCompletedEventArgs e)
             {
                 if (e.Error != null)
                 {
-                    Debug.WriteLine("Get Files operation failed: " + e.Error.Message);
-                    TriggerGetFilesFailed(e.Error);
+                    Debug.WriteLine("Get File List operation failed: " + e.Error.Message);
+                    TriggerGetFileListFailed(e.Error);
                     return;
                 }
 
-                GetFilesResult result = JsonConvert.DeserializeObject<GetFilesResult>(e.Result);
-                Debug.WriteLine("Get Folders operation successful: " + result);
-                TriggerGetFilesComplete(result);
+                PaginationResult pResult = JsonConvert.DeserializeObject<PaginationResult>(e.Result);
+                JObject resultSearch = JObject.Parse(e.Result);
+                IList<JToken> objectResults = resultSearch["results"].Children().ToList();
+                IList<FileResult> results = objectResults.Select(objectSearch =>
+                    JsonConvert.DeserializeObject<FileResult>(objectSearch.ToString())).ToList();
+
+                Debug.WriteLine("Get File List operation successful: " + results);
+                TriggerGetFileListComplete(results, pResult);
             };
         }
 
@@ -525,7 +538,7 @@ namespace MinusEngine
                     }
                     catch (Exception e)
                     {
-                        TriggerFileFailed(e);
+                        TriggerModifyFileFailed(e);
                     }
                 }
                     );
@@ -533,7 +546,7 @@ namespace MinusEngine
             catch (Exception e)
             {
                 Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
-                TriggerFileFailed(e);
+                TriggerModifyFileFailed(e);
             }
 
             client.UploadStringCompleted += delegate(object sender, UploadStringCompletedEventArgs e)
@@ -541,13 +554,13 @@ namespace MinusEngine
                 if (e.Error != null)
                 {
                     Debug.WriteLine("Modify File operation failed: " + e.Error.Message);
-                    TriggerFileFailed(e.Error);
+                    TriggerModifyFileFailed(e.Error);
                     return;
                 }
 
                 FileResult result = JsonConvert.DeserializeObject<FileResult>(e.Result);
                 Debug.WriteLine("Modify File operation successful: " + result);
-                TriggerFileComplete(result);
+                TriggerModifyFileComplete(result);
             };
         }
 
@@ -572,7 +585,7 @@ namespace MinusEngine
                         Debug.WriteLine("Delete File operation failed: " + e);
                     }
                 }
-                    );
+                );
             }
             catch (Exception e)
             {
@@ -595,20 +608,22 @@ namespace MinusEngine
             // Not worth checking for file existence or other stuff, as either Path.GetFileName or the upload
             // will check & fail
             Stream data = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            UploadItem(accessToken, folderId, filePath, caption, data);
+            UploadItem(accessToken, folderId, caption, filePath, data);
         }
 
         public void UploadItem(String accessToken, String folderId, String caption, String filePath, Stream data)
         {
             Uri upload = new Uri(FOLDERS_URL + folderId + "/files?bearer_token=" + accessToken);
-            const string boundaryString = "------WebKitFormBoundaryAYAOHDWfizxZB8OE";
+
+            string boundaryString = "----------------------------" + DateTime.Now.Ticks.ToString("x");
 
             try
             {
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(upload);
                 request.Method = "POST";
                 request.ContentType = "multipart/form-data; boundary=" + boundaryString;
-                request.KeepAlive = true;
+                request.Host = "minus.com";
+                request.KeepAlive = false;
 
                 ThreadPool.QueueUserWorkItem(state =>
                 {
@@ -621,10 +636,9 @@ namespace MinusEngine
                         //File
                         postDataWriter.Write("\r\n--" + boundaryString + "\r\n");
                         postDataWriter.Write("Content-Disposition: form-data;"
-                                             + "name=\"{0}\"; "
-                                             + "filename=\"{1}\""
-                                             + "\r\nContent-Type: {2}\r\n\r\n",
-                                             "file",
+                                             + "name=\"file\"; "
+                                             + "filename=\"{0}\""
+                                             + "\r\nContent-Type: {1}\r\n\r\n",
                                              fileName,
                                              Path.GetExtension(filePath));
 
@@ -636,43 +650,43 @@ namespace MinusEngine
                         //Filename
                         postDataWriter.Write("\r\n--" + boundaryString + "\r\n");
                         postDataWriter.Write("Content-Disposition: form-data;"
-                                             + " name=\"{0}\"\r\n\r\n{1}",
-                                             "filename",
+                                             + " name=\"filename\"\r\n\r\n{0}",
                                              fileName);
+
+                        postDataWriter.Flush();
 
                         //Caption
                         postDataWriter.Write("\r\n--" + boundaryString + "\r\n");
                         postDataWriter.Write("Content-Disposition: form-data;"
-                                             + " name=\"{0}\"\r\n\r\n{1}",
-                                             "caption",
+                                             + " name=\"caption\"\r\n\r\n{0}",
                                              caption);
 
                         postDataWriter.Flush();
 
 
 
-                        postDataWriter.Write("\r\n--" + boundaryString + "--\r\n");
+                        postDataWriter.Write("\r\n--" + boundaryString + "--");
                         postDataWriter.Flush();
 
                         request.ContentLength = postDataStream.Length;
 
-                        Stream strmOut = request.GetRequestStream();
+                        Stream requestStream = request.GetRequestStream();
 
-                        postDataStream.WriteTo(strmOut);
+                        postDataStream.WriteTo(requestStream);
+                        postDataStream.Flush();
 
 
 
-                        WebResponse response = request.GetResponse();
+                        WebResponse response = request.GetResponse();                
                         Stream stream = response.GetResponseStream();
 
                         if (stream != null)
                         {
                             StreamReader reader = new StreamReader(stream);
                             string responseString = reader.ReadToEnd();
-
-                            UploadItemResult resultItems = JsonConvert.DeserializeObject<UploadItemResult>(responseString);
-                            Debug.WriteLine("UploadItem operation successful: " + resultItems);
-                            TriggerUploadItemComplete(resultItems);
+                            FileResult result = JsonConvert.DeserializeObject<FileResult>(responseString);
+                            Debug.WriteLine("UploadItem operation successful: " + result);
+                            TriggerUploadItemComplete(result);
                         }
 
                         postDataStream.Close();
@@ -680,7 +694,7 @@ namespace MinusEngine
                     catch (Exception e)
                     {
 
-                        Debug.WriteLine("Upload Failed" + e.Message);
+                        Debug.WriteLine("Upload Failed " + e.Message);
                         TriggerUploadItemFailed(e);
                     }
 
@@ -702,12 +716,12 @@ namespace MinusEngine
 
         #region Gets
 
-        public void GetFollowers(String username, String accessToken)
+        public void GetFollowers(String username, String accessToken, Int32 pageNum)
         {
             CookieAwareWebClient client = new CookieAwareWebClient();
             client.Headers["Content-Type"] = "application/x-www-form-urlencoded";
 
-            Uri getFollowers = new Uri(USERS_URL + username + "/followers?bearer_token=" + accessToken);
+            Uri getFollowers = new Uri(USERS_URL + username + "/followers?page=" + pageNum + "&bearer_token=" + accessToken);
 
             try
             {
@@ -739,19 +753,24 @@ namespace MinusEngine
                     return;
                 }
 
-                List<GetFollowResult> result =
-                    JsonConvert.DeserializeObject<List<GetFollowResult>>(GetStringInBetween("[", "]", e.Result, true, true));
-                Debug.WriteLine("Get Followers operation successful: " + result);
-                TriggerGetFollowersComplete(result);
+                
+                PaginationResult paginationResult = JsonConvert.DeserializeObject<PaginationResult>(e.Result);
+                JObject resultSearch = JObject.Parse(e.Result);
+                IList<JToken> objectResults = resultSearch["results"].Children().ToList();
+                IList<FollowResult> results = objectResults.Select(objectResult =>
+                    JsonConvert.DeserializeObject<FollowResult>(objectResult.ToString())).ToList();
+              
+                Debug.WriteLine("Get Followers operation successful: " + results);
+                TriggerGetFollowersComplete(results, paginationResult);
             }; 
         }
 
-        public void GetFollowing(String username, String accessToken)
+        public void GetFollowing(String username, String accessToken, Int32 pageNum)
         {
             CookieAwareWebClient client = new CookieAwareWebClient();
             client.Headers["Content-Type"] = "application/x-www-form-urlencoded";
 
-            Uri getFollowing = new Uri(USERS_URL + username + "/following?bearer_token=" + accessToken);
+            Uri getFollowing = new Uri(USERS_URL + username + "/following?page=" + pageNum + "&bearer_token=" + accessToken);
 
             try
             {
@@ -783,10 +802,14 @@ namespace MinusEngine
                     return;
                 }
 
-                List<GetFollowResult> result =
-                    JsonConvert.DeserializeObject<List<GetFollowResult>>(GetStringInBetween("[", "]", e.Result, true, true));
-                Debug.WriteLine("Get Following operation successful: " + result);
-                TriggerGetFollowingComplete(result);
+                PaginationResult paginationResult = JsonConvert.DeserializeObject<PaginationResult>(e.Result);
+                JObject resultSearch = JObject.Parse(e.Result);
+                IList<JToken> objectResults = resultSearch["results"].Children().ToList();
+                IList<FollowResult> results = objectResults.Select(objectResult =>
+                    JsonConvert.DeserializeObject<FollowResult>(objectResult.ToString())).ToList();
+
+                Debug.WriteLine("Get Following operation successful: " + results);
+                TriggerGetFollowingComplete(results, paginationResult);
             };  
         }
 
@@ -800,45 +823,10 @@ namespace MinusEngine
         {
             byte[] buffer = imageBuffer;
             int bytesRead;
-
             while ((bytesRead = input.Read(buffer, 0, buffer.Length)) != 0)
             {
                 output.Write(buffer, 0, bytesRead);
             }
-        }
-
-        public static string GetStringInBetween(string strBegin, string strEnd, string strSource, bool includeBegin = false, bool includeEnd = false)
-        {
-            string[] result = { "", "" };
-            //Gets the location of the Begining String
-            int iIndexOfBegin = strSource.IndexOf(strBegin);
-            if (iIndexOfBegin != -1)
-            {
-                //Finds out the location right before Begining String
-                if (includeBegin)
-                { iIndexOfBegin -= strBegin.Length; }
-                strSource = strSource.Substring(iIndexOfBegin
-                    + strBegin.Length);
-                //Gets the location fo the End String
-                int iEnd = strSource.IndexOf(strEnd);
-
-                if (iEnd != -1)
-                {
-                    //Finds out the location right after the End String
-                    if (includeEnd)
-                    { iEnd += strEnd.Length; }
-                    //Sets result[0] as the string between the two given strings
-                    result[0] = strSource.Substring(0, iEnd);
-                    if (iEnd + strEnd.Length < strSource.Length)
-                    { result[1] = strSource.Substring(iEnd + strEnd.Length); }
-                }
-            }
-            else
-            {
-                //Sets result[1] as the rest of the String leftover
-                result[1] = strSource;
-            }
-            return result[0];
         }
 
         #endregion
@@ -861,7 +849,7 @@ namespace MinusEngine
             }
         }
 
-        private void TriggerUploadItemComplete(UploadItemResult result)
+        private void TriggerUploadItemComplete(FileResult result)
         {
             if (UploadItemComplete != null)
             {
@@ -877,7 +865,7 @@ namespace MinusEngine
             }
         }
 
-        private void TriggerCreateFolderComplete(CreateFolderResult result)
+        private void TriggerCreateFolderComplete(FolderResult result)
         {
             if (CreateFolderComplete != null)
             {
@@ -893,15 +881,15 @@ namespace MinusEngine
             }
         }
 
-        private void TriggerGetFoldersComplete(GetFoldersResult result)
+        private void TriggerGetFolderListComplete(IList<FolderResult> result, PaginationResult pResult)
         {
             if (GetFoldersComplete != null)
             {
-                GetFoldersComplete.Invoke(this, result);
+                GetFoldersComplete.Invoke(this, result, pResult);
             }
         }
 
-        private void TriggerGetFoldersFailed(Exception e)
+        private void TriggerGetFolderListFailed(Exception e)
         {
             if (GetFoldersFailed != null)
             {
@@ -909,47 +897,63 @@ namespace MinusEngine
             }
         }
 
-        private void TriggerFolderComplete(FolderResult result)
+        private void TriggerGetFolderComplete(FolderResult result)
         {
-            if (FolderComplete != null)
+            if (GetFolderComplete != null)
             {
-                FolderComplete.Invoke(this, result);
+                GetFolderComplete.Invoke(this, result);
             }
         }
 
-        private void TriggerFolderFailed(Exception e)
+        private void TriggerGetFolderFailed(Exception e)
         {
-            if (FolderFailed != null)
+            if (GetFolderFailed != null)
             {
-                FolderFailed.Invoke(this, e);
+                GetFolderFailed.Invoke(this, e);
             }
         }
 
-        private void TriggerFileComplete(FileResult result)
+        private void TriggerModifyFolderComplete(FolderResult result)
         {
-            if (FileComplete != null)
+            if (ModifyFolderComplete != null)
             {
-                FileComplete.Invoke(this, result);
+                ModifyFolderComplete.Invoke(this, result);
             }
         }
 
-        private void TriggerFileFailed(Exception e)
+        private void TriggerModifyFolderFailed(Exception e)
         {
-            if (FileFailed != null)
+            if (ModifyFolderFailed != null)
             {
-                FileFailed.Invoke(this, e);
+                ModifyFolderFailed.Invoke(this, e);
             }
         }
 
-        private void TriggerGetFilesComplete(GetFilesResult result)
+        private void TriggerGetFileComplete(FileResult result)
+        {
+            if (GetFileComplete != null)
+            {
+                GetFileComplete.Invoke(this, result);
+            }
+        }
+
+        private void TriggerGetFileFailed(Exception e)
+        {
+            if (GetFileFailed != null)
+            {
+                GetFileFailed.Invoke(this, e);
+            }
+        }
+
+        private void TriggerGetFileListComplete(IList<FileResult> result, PaginationResult pResult)
         {
             if (GetFilesComplete != null)
             {
-                GetFilesComplete.Invoke(this, result);
+                GetFilesComplete.Invoke(this, result, pResult);
             }
         }
 
-        private void TriggerGetFilesFailed(Exception e)
+        private void TriggerGetFileListFailed(Exception e)
         {
             if (GetFilesFailed != null)
             {
@@ -957,11 +961,27 @@ namespace MinusEngine
             }
         }
 
-        private void TriggerGetFollowersComplete(List<GetFollowResult> result)
+        private void TriggerModifyFileComplete(FileResult result)
+        {
+            if (ModifyFileComplete != null)
+            {
+                ModifyFileComplete.Invoke(this, result);
+            }
+        }
+
+        private void TriggerModifyFileFailed(Exception e)
+        {
+            if (ModifyFileFailed != null)
+            {
+                ModifyFileFailed.Invoke(this, e);
+            }
+        }
+
+        private void TriggerGetFollowersComplete(IList<FollowResult> result, PaginationResult paginationResult)
         {
             if (GetFollowersComplete != null)
             {
-                GetFollowersComplete.Invoke(this, result);
+                GetFollowersComplete.Invoke(this, result, paginationResult);
             }
         }
 
@@ -973,11 +993,11 @@ namespace MinusEngine
             }
         }
 
-        private void TriggerGetFollowingComplete(List<GetFollowResult> result)
+        private void TriggerGetFollowingComplete(IList<FollowResult> result, PaginationResult paginationResult)
         {
             if (GetFollowingComplete != null)
             {
-                GetFollowingComplete.Invoke(this, result);
+                GetFollowingComplete.Invoke(this, result, paginationResult);
             }
         }
 
