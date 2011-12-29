@@ -12,6 +12,8 @@
     <AssemblyName>MinusEngine</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -36,6 +38,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -48,7 +51,8 @@
     </Compile>
     <Compile Include="FolderResult.cs" />
     <Compile Include="FileResult.cs" />
-    <Compile Include="FollowResult.cs" />
+    <Compile Include="MessageResult.cs" />
+    <Compile Include="UserResult.cs" />
     <Compile Include="MinusEngine.cs" />
     <Compile Include="oAuthResult.cs" />
     <Compile Include="PaginationResult.cs" />

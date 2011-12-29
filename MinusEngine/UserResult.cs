@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace MinusEngine
 {
-    public class FollowResult
+    public class UserResult
     {
         #region Fields
 
@@ -57,7 +57,7 @@ namespace MinusEngine
 
         #endregion
 
-        public FollowResult(String username, String folders, String displayName, String description, String url, Int32 visits, String avatar, String fbUsername, String followers, Int32 karma, String following, Int32 shared, String fbProfileLink, String slug, String twitterScreenName)
+        public UserResult(String username, String folders, String displayName, String description, String url, Int32 visits, String avatar, String fbUsername, String followers, Int32 karma, String following, Int32 shared, String fbProfileLink, String slug, String twitterScreenName)
         {
             Username = username;
             Folders = folders;

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.Web;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -41,11 +42,23 @@ namespace MinusEngine
     public delegate void ModifyFileCompleteHandler(MinusEngine sender, FileResult result);
     public delegate void ModifyFileFailedHandler(MinusEngine sender, Exception e);
 
-    public delegate void GetFollowersCompleteHandler(MinusEngine sender, IList<FollowResult> result, PaginationResult pResult);
+    public delegate void GetFollowersCompleteHandler(MinusEngine sender, IList<UserResult> result, PaginationResult pResult);
     public delegate void GetFollowersFailedHandler(MinusEngine sender, Exception e);
 
-    public delegate void GetFollowingCompleteHandler(MinusEngine sender, IList<FollowResult> result, PaginationResult pResult);
+    public delegate void GetFollowingCompleteHandler(MinusEngine sender, IList<UserResult> result, PaginationResult pResult);
     public delegate void GetFollowingFailedHandler(MinusEngine sender, Exception e);
+
+    public delegate void AddFolloweeCompleteHandler(MinusEngine sender, UserResult result);
+    public delegate void AddFolloweeFailedHandler(MinusEngine sender, Exception e);
+
+    public delegate void GetLastMessageCompleteHandler(MinusEngine sender, List<MessageResult> result, PaginationResult pResult);
+    public delegate void GetLastMessageFailedHandler(MinusEngine sender, Exception e);
+
+    public delegate void GetMessageCompleteHandler(MinusEngine sender, List<MessageResult> result, PaginationResult pResult);
+    public delegate void GetMessageFailedHandler(MinusEngine sender, Exception e);
+
+    public delegate void SendMessageCompleteHandler(MinusEngine sender, MessageResult messageResult);
+    public delegate void SendMessageFailedHandler(MinusEngine sender, Exception e);
 
     #endregion
 
@@ -57,6 +70,8 @@ namespace MinusEngine
         public static readonly Uri FOLDERS_URL = new Uri(BASE_URL + "api/v2/folders/");
         public static readonly Uri USERS_URL = new Uri(BASE_URL + "api/v2/users/");
         public static readonly Uri FILES_URL = new Uri(BASE_URL + "api/v2/files/");
+        public static readonly Uri MESSAGES_URL = new Uri(BASE_URL + "api/v2/activeuser/messages/");
+        public static readonly Uri ACTIVE_URL = new Uri(BASE_URL + "api/v2/activeuser/");
 
         #region Handler Events
 
@@ -92,6 +107,18 @@ namespace MinusEngine
 
         public event GetFollowingCompleteHandler GetFollowingComplete;
         public event GetFollowingFailedHandler GetFollowingFailed;
+
+        public event AddFolloweeCompleteHandler AddFolloweeComplete;
+        public event AddFolloweeFailedHandler AddFolloweeFailed;
+
+        public event GetLastMessageCompleteHandler GetLastMessageComplete;
+        public event GetLastMessageFailedHandler GetLastMessageFailed;
+
+        public event GetMessageCompleteHandler GetMessageComplete;
+        public event GetMessageFailedHandler GetMessageFailed;
+
+        public event SendMessageCompleteHandler SendMessageComplete;
+        public event SendMessageFailedHandler SendMessageFailed;
 
         #endregion
 
@@ -757,8 +784,8 @@ namespace MinusEngine
                 PaginationResult paginationResult = JsonConvert.DeserializeObject<PaginationResult>(e.Result);
                 JObject resultSearch = JObject.Parse(e.Result);
                 IList<JToken> objectResults = resultSearch["results"].Children().ToList();
-                IList<FollowResult> results = objectResults.Select(objectResult =>
-                    JsonConvert.DeserializeObject<FollowResult>(objectResult.ToString())).ToList();
+                IList<UserResult> results = objectResults.Select(objectResult =>
+                    JsonConvert.DeserializeObject<UserResult>(objectResult.ToString())).ToList();
               
                 Debug.WriteLine("Get Followers operation successful: " + results);
                 TriggerGetFollowersComplete(results, paginationResult);
@@ -805,8 +832,8 @@ namespace MinusEngine
                 PaginationResult paginationResult = JsonConvert.DeserializeObject<PaginationResult>(e.Result);
                 JObject resultSearch = JObject.Parse(e.Result);
                 IList<JToken> objectResults = resultSearch["results"].Children().ToList();
-                IList<FollowResult> results = objectResults.Select(objectResult =>
-                    JsonConvert.DeserializeObject<FollowResult>(objectResult.ToString())).ToList();
+                IList<UserResult> results = objectResults.Select(objectResult =>
+                    JsonConvert.DeserializeObject<UserResult>(objectResult.ToString())).ToList();
 
                 Debug.WriteLine("Get Following operation successful: " + results);
                 TriggerGetFollowingComplete(results, paginationResult);
@@ -814,6 +841,204 @@ namespace MinusEngine
         }
 
         #endregion
+
+        #region Add
+
+        public void AddFollowee(String username, String accessToken, String followee)
+        {
+            CookieAwareWebClient client = new CookieAwareWebClient();
+            client.Headers["Content-Type"] = "application/x-www-form-urlencoded";
+
+            StringBuilder data = new StringBuilder();
+
+            Uri getFollowing = new Uri(USERS_URL + username + "/following?bearer_token=" + accessToken);
+
+            data.Append("slug=" + followee);
+
+            try
+            {
+                ThreadPool.QueueUserWorkItem(state =>
+                {
+                    try
+                    {
+                        client.UploadStringAsync(getFollowing, "POST", data.ToString());
+                    }
+                    catch (WebException e)
+                    {
+                        TriggerAddFolloweeFailed(e);
+                    }
+                }
+               );
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
+                TriggerAddFolloweeFailed(e);
+            }
+
+            client.UploadStringCompleted += delegate(object sender, UploadStringCompletedEventArgs e)
+            {
+                if (e.Error != null)
+                {
+                    Debug.WriteLine("Add Followee operation failed: " + e.Error.Message);
+                    TriggerAddFolloweeFailed(e.Error);
+                    return;
+                }
+                UserResult result = JsonConvert.DeserializeObject<UserResult>(e.Result);
+
+                Debug.WriteLine("Add Followee operation successful: " + result);
+                TriggerAddFolloweeComplete(result);
+            };
+        }
+
+        #endregion
+
+        #endregion
+
+        #region Messages
+
+        #region Gets
+
+        public void GetLastMessage(String accessToken)
+        {
+            CookieAwareWebClient client = new CookieAwareWebClient();
+            client.Headers["Content-Type"] = "application/x-www-form-urlencoded";
+
+            Uri getMessage = new Uri(ACTIVE_URL + "messages?bearer_token=" + accessToken);
+
+            try
+            {
+                ThreadPool.QueueUserWorkItem(state =>
+                {
+                    try
+                    {
+                        client.DownloadStringAsync(getMessage);
+                    }
+                    catch (WebException e)
+                    {
+                        TriggerGetLastMessageFailed(e);
+                    }
+                }
+                );
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
+                TriggerGetLastMessageFailed(e);
+            }
+
+            client.DownloadStringCompleted += delegate(object sender, DownloadStringCompletedEventArgs e)
+            {
+                if (e.Error != null)
+                {
+                    Debug.WriteLine("Get Last Message operation failed: " + e.Error.Message);
+                    TriggerGetLastMessageFailed(e.Error);
+                    return;
+                }
+
+                PaginationResult pResult = JsonConvert.DeserializeObject<PaginationResult>(e.Result);
+                JObject resultSearch = JObject.Parse(e.Result);
+                IList<JToken> objectResults = resultSearch["results"].Children().ToList();
+                List<MessageResult> results = objectResults.Select(objectResult =>
+                    JsonConvert.DeserializeObject<MessageResult>(objectResult.ToString())).ToList();
+                Debug.WriteLine("Get Last Message operation successful: " + results);
+                TriggerGetLastMessageComplete(results, pResult);
+            };
+        }
+
+        public void GetMessage(String accessToken, String target, Int32 pageNum)
+        {
+            CookieAwareWebClient client = new CookieAwareWebClient();
+            client.Headers["Content-Type"] = "application/x-www-form-urlencoded";
+
+            Uri getMessage = new Uri(MESSAGES_URL + target + "?page=" + pageNum + "&bearer_token=" + accessToken);
+
+            try
+            {
+                ThreadPool.QueueUserWorkItem(state =>
+                {
+                    try
+                    {
+                        client.DownloadStringAsync(getMessage);
+                    }
+                    catch (WebException e)
+                    {
+                        TriggerGetMessageFailed(e);
+                    }
+                }
+                );
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
+                TriggerGetMessageFailed(e);
+            }
+
+            client.DownloadStringCompleted += delegate(object sender, DownloadStringCompletedEventArgs e)
+            {
+                if (e.Error != null)
+                {
+                    Debug.WriteLine("Get Message operation failed: " + e.Error.Message);
+                    TriggerGetMessageFailed(e.Error);
+                    return;
+                }
+
+                PaginationResult pResult = JsonConvert.DeserializeObject<PaginationResult>(e.Result);
+                JObject resultSearch = JObject.Parse(e.Result);
+                IList<JToken> objectResults = resultSearch["results"].Children().ToList();
+                List<MessageResult> results = objectResults.Select(objectResult =>
+                    JsonConvert.DeserializeObject<MessageResult>(objectResult.ToString())).ToList();
+                Debug.WriteLine("Get Message operation successful: " + results);
+                TriggerGetMessageComplete(results, pResult);
+            };
+        }
+
+        #endregion
+
+        public void SendMessage(String accessToken, String target, String message)
+        {
+            CookieAwareWebClient client = new CookieAwareWebClient();
+            client.Headers["Content-Type"] = "application/x-www-form-urlencoded";
+
+            Uri sendMessage = new Uri(MESSAGES_URL + target + "?bearer_token=" + accessToken);
+            StringBuilder data = new StringBuilder();
+            data.Append("body=" + HttpUtility.UrlEncode(message));
+
+            try
+            {
+                ThreadPool.QueueUserWorkItem(state =>
+                {
+                    try
+                    {
+                        client.UploadStringAsync(sendMessage, data.ToString());
+                    }
+                    catch (WebException e)
+                    {
+                        TriggerSendMessageFailed(e);
+                    }
+                }
+                );
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
+                TriggerSendMessageFailed(e);
+            }
+
+            client.UploadStringCompleted += delegate(object sender, UploadStringCompletedEventArgs e)
+            {
+                if (e.Error != null)
+                {
+                    Debug.WriteLine("Send Message operation failed: " + e.Error.Message);
+                    TriggerSendMessageFailed(e.Error);
+                    return;
+                }
+
+                MessageResult result = JsonConvert.DeserializeObject<MessageResult>(e.Result);
+                Debug.WriteLine("Send Message operation successful: " + result);
+                TriggerSendMessageComplete(result);
+            };
+        }
 
         #endregion
 
@@ -833,6 +1058,8 @@ namespace MinusEngine
 
         #region Triggers
 
+        #region oAuth
+
         private void TriggeroAuthComplete(oAuthResult result)
         {
             if (oAuthComplete != null)
@@ -849,21 +1076,9 @@ namespace MinusEngine
             }
         }
 
-        private void TriggerUploadItemComplete(FileResult result)
-        {
-            if (UploadItemComplete != null)
-            {
-                UploadItemComplete.Invoke(this, result);
-            }
-        }
-
-        private void TriggerUploadItemFailed(Exception e)
-        {
-            if (UploadItemFailed != null)
-            {
-                UploadItemFailed.Invoke(this, e);
-            }
-        }
+        #endregion
+        
+        #region Folders
 
         private void TriggerCreateFolderComplete(FolderResult result)
         {
@@ -881,6 +1096,7 @@ namespace MinusEngine
             }
         }
 
+
         private void TriggerGetFolderListComplete(IList<FolderResult> result, PaginationResult pResult)
         {
             if (GetFoldersComplete != null)
@@ -896,6 +1112,7 @@ namespace MinusEngine
                 GetFoldersFailed.Invoke(this, e);
             }
         }
+
 
         private void TriggerGetFolderComplete(FolderResult result)
         {
@@ -913,6 +1130,7 @@ namespace MinusEngine
             }
         }
 
+
         private void TriggerModifyFolderComplete(FolderResult result)
         {
             if (ModifyFolderComplete != null)
@@ -928,6 +1146,28 @@ namespace MinusEngine
                 ModifyFolderFailed.Invoke(this, e);
             }
         }
+
+
+        #endregion
+
+        #region Files
+
+        private void TriggerUploadItemComplete(FileResult result)
+        {
+            if (UploadItemComplete != null)
+            {
+                UploadItemComplete.Invoke(this, result);
+            }
+        }
+
+        private void TriggerUploadItemFailed(Exception e)
+        {
+            if (UploadItemFailed != null)
+            {
+                UploadItemFailed.Invoke(this, e);
+            }
+        }
+
 
         private void TriggerGetFileComplete(FileResult result)
         {
@@ -945,6 +1185,7 @@ namespace MinusEngine
             }
         }
 
+
         private void TriggerGetFileListComplete(IList<FileResult> result, PaginationResult pResult)
         {
             if (GetFilesComplete != null)
@@ -960,6 +1201,7 @@ namespace MinusEngine
                 GetFilesFailed.Invoke(this, e);
             }
         }
+
 
         private void TriggerModifyFileComplete(FileResult result)
         {
@@ -977,7 +1219,11 @@ namespace MinusEngine
             }
         }
 
-        private void TriggerGetFollowersComplete(IList<FollowResult> result, PaginationResult paginationResult)
+        #endregion
+        
+        #region Users
+
+        private void TriggerGetFollowersComplete(IList<UserResult> result, PaginationResult paginationResult)
         {
             if (GetFollowersComplete != null)
             {
@@ -993,7 +1239,8 @@ namespace MinusEngine
             }
         }
 
-        private void TriggerGetFollowingComplete(IList<FollowResult> result, PaginationResult paginationResult)
+
+        private void TriggerGetFollowingComplete(IList<UserResult> result, PaginationResult paginationResult)
         {
             if (GetFollowingComplete != null)
             {
@@ -1009,6 +1256,79 @@ namespace MinusEngine
             }
         }
 
+
+        private void TriggerAddFolloweeComplete(UserResult result)
+        {
+            if (AddFolloweeComplete != null)
+            {
+                AddFolloweeComplete.Invoke(this, result);
+            }
+        }
+
+        private void TriggerAddFolloweeFailed(Exception e)
+        {
+            if (AddFolloweeFailed != null)
+            {
+                AddFolloweeFailed.Invoke(this, e);
+            }
+        }
+        
+        #endregion       
+
+        #region Messages
+
+        private void TriggerGetLastMessageComplete(List<MessageResult> result, PaginationResult pResult)
+        {
+            if (GetLastMessageComplete != null)
+            {
+                GetLastMessageComplete.Invoke(this, result, pResult);
+            }
+        }
+
+        private void TriggerGetLastMessageFailed(Exception e)
+        {
+            if (GetLastMessageFailed != null)
+            {
+                GetLastMessageFailed.Invoke(this, e);
+            }
+        }
+
+
+        private void TriggerGetMessageComplete(List<MessageResult> result, PaginationResult pResult)
+        {
+            if (GetMessageComplete != null)
+            {
+                GetMessageComplete.Invoke(this, result, pResult);
+            }
+        }
+
+        private void TriggerGetMessageFailed(Exception e)
+        {
+            if (GetMessageFailed != null)
+            {
+                GetMessageFailed.Invoke(this, e);
+            }
+        }
+
+
+        private void TriggerSendMessageComplete(MessageResult result)
+        {
+            if (SendMessageComplete != null)
+            {
+                SendMessageComplete.Invoke(this, result);
+            }
+        }
+
+        private void TriggerSendMessageFailed(Exception e)
+        {
+            if (SendMessageFailed != null)
+            {
+                SendMessageFailed.Invoke(this, e);
+            }
+        }
+
+        #endregion
+        
         #endregion
     }
 }
