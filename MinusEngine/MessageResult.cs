@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 
@@ -8,6 +6,18 @@ namespace MinusEngine
 {
     public class MessageResult
     {
+        public MessageResult(String body, Boolean read, String target, String sender, String thread, DateTime created)
+        {
+            Body = body;
+            Read = read;
+            Target = target;
+            Sender = sender;
+            Thread = thread;
+            Created = created;
+        }
+
+        #region Fields
+
         [JsonProperty("body")]
         public String Body { get; set; }
 
@@ -26,15 +36,9 @@ namespace MinusEngine
         [JsonProperty("created")]
         public DateTime Created { get; set; }
 
-        public MessageResult(String body, Boolean read, String target, String sender, String thread, DateTime created)
-        {
-            Body = body;
-            Read = read;
-            Target = target;
-            Sender = sender;
-            Thread = thread;
-            Created = created;
-        }
+        #endregion
+
+        #region Low Level Override
 
         public override string ToString()
         {
@@ -52,5 +56,7 @@ namespace MinusEngine
                 .Append(Created)
                 .Append('}').ToString();
         }
+
+        #endregion
     }
 }

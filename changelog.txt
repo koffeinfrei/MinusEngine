@@ -1,5 +1,21 @@
 MinusAPIv2 Changelog
 
+Version 0.2.3
+30-Dec-2011
+	* Fixed
+		* Some typos/missing error reports.
+		* Uniform class structure.
+	* Added
+		* Support for Folder Feeds (APIv2 doesn't support yet?).
+		* Support for Mine Feeds.
+		* Support for Get User.
+		* Missing triggers (oAuthRefreshComplete/Failed)
+		* Better Delete support
+			*Errors reports/Handlers
+	* TODO
+		* Add comments!
+		* Example code!
+		
 Version 0.2.2
 29-Dec-2011
 	* Added

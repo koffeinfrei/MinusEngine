@@ -5,7 +5,20 @@ using Newtonsoft.Json;
 namespace MinusEngine
 {
     public class PaginationResult
-    {
+    {   
+        public PaginationResult(Int32 page, String next, Int32 perPage, Int32 totalItems, Int32 numPages,
+                                String previous)
+        {
+            Page = page;
+            Next = next;
+            PerPage = perPage;
+            TotalItems = totalItems;
+            NumPages = numPages;
+            Previous = previous;
+        }
+
+        #region Fields
+
         [JsonProperty("page")]
         public Int32 Page { get; set; }
 
@@ -24,31 +37,18 @@ namespace MinusEngine
         [JsonProperty("previous")]
         public String Previous { get; set; }
 
-        public PaginationResult()
-        {
-            
-        }
-
-        public PaginationResult(Int32 page, String next, Int32 perPage, Int32 totalItems, Int32 numPages, String previous)
-        {
-            Page = page;
-            Next = next;
-            PerPage = perPage;
-            TotalItems = totalItems;
-            NumPages = numPages;
-            Previous = previous;
-        }
+        #endregion
 
         #region Low level overrides
 
         public override string ToString()
         {
             return new StringBuilder("PaginationResults{")
-                .Append(", _Page=").Append(Page)
-                .Append(", _Next=").Append(Next)
-                .Append(", _PerPage=").Append(PerPage)
-                .Append(", _TotalItems=").Append(TotalItems)
-                .Append(", _NumPages=").Append(NumPages)
+                .Append("Page=").Append(Page)
+                .Append(", Next=").Append(Next)
+                .Append(", PerPage=").Append(PerPage)
+                .Append(", TotalItems=").Append(TotalItems)
+                .Append(", NumPages=").Append(NumPages)
                 .Append(", Previous=").Append(Previous)
                 .Append('}').ToString();
         }

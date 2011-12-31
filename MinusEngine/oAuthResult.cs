@@ -4,15 +4,8 @@ using Newtonsoft.Json;
 
 namespace MinusEngine
 {
-// ReSharper disable InconsistentNaming
     public class oAuthResult
-// ReSharper restore InconsistentNaming
     {
-        public oAuthResult()
-        {
-            
-        }
-
         public oAuthResult(String accessToken, String tokenType, String expire, String refreshToken, String scope)
         {
             AccessToken = accessToken;
@@ -21,6 +14,8 @@ namespace MinusEngine
             RefreshToken = refreshToken;
             Scope = scope;
         }
+
+        #region Fields
 
         [JsonProperty("access_token")]
         public String AccessToken { get; set; }
@@ -37,19 +32,21 @@ namespace MinusEngine
         [JsonProperty("scope")]
         public String Scope { get; set; }
 
+        #endregion
+
+        #region Low Level Override
+
         public override string ToString()
         {
-            return new StringBuilder("oAuthResult{AccessToken=")
-                .Append(AccessToken)
-                .Append(", TokenType=")
-                .Append(TokenType)
-                .Append(", Expire=")
-                .Append(Expire)
-                .Append(", RefreshToken=")
-                .Append(RefreshToken)
-                .Append(", Scope=")
-                .Append(Scope)
+            return new StringBuilder("oAuthResult{")
+                .Append("AccessToken=").Append(AccessToken)
+                .Append(", TokenType=").Append(TokenType)
+                .Append(", Expire=").Append(Expire)
+                .Append(", RefreshToken=").Append(RefreshToken)
+                .Append(", Scope=").Append(Scope)
                 .Append('}').ToString();
         }
+
+        #endregion
     }
 }

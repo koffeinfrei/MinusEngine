@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -15,11 +16,17 @@ namespace MinusEngine
 
     #region Handler Delegates
 
+    #region oAuth
+
     public delegate void oAuthCompleteHandler(MinusEngine sender, oAuthResult result);
     public delegate void oAuthFailedHandler(MinusEngine sender, Exception e);
 
-    public delegate void UploadItemCompleteHandler(MinusEngine sender, FileResult result);
-    public delegate void UploadItemFailedHandler(MinusEngine sender, Exception e);
+    public delegate void oAuthRefreshCompleteHandler(MinusEngine sender, oAuthResult result);
+    public delegate void oAuthRefreshFailedHandler(MinusEngine sender, Exception e);
+
+    #endregion
+
+    #region Folders
 
     public delegate void CreateFolderCompleteHandler(MinusEngine sender, FolderResult result);
     public delegate void CreateFolderFailedHandler(MinusEngine sender, Exception e);
@@ -33,6 +40,16 @@ namespace MinusEngine
     public delegate void ModifyFolderCompleteHandler(MinusEngine sender, FolderResult result);
     public delegate void ModifyFolderFailedHandler(MinusEngine sender, Exception e);
 
+    public delegate void DeleteFolderCompleteHandler(MinusEngine sender, HttpStatusCode result);
+    public delegate void DeleteFolderFailedHandler(MinusEngine sender, HttpStatusCode result, Exception e);
+
+    #endregion
+
+    #region Files
+
+    public delegate void UploadItemCompleteHandler(MinusEngine sender, FileResult result);
+    public delegate void UploadItemFailedHandler(MinusEngine sender, Exception e);
+
     public delegate void GetFileCompleteHandler(MinusEngine sender, FileResult result);
     public delegate void GetFileFailedHandler(MinusEngine sender, Exception e);
 
@@ -41,6 +58,16 @@ namespace MinusEngine
 
     public delegate void ModifyFileCompleteHandler(MinusEngine sender, FileResult result);
     public delegate void ModifyFileFailedHandler(MinusEngine sender, Exception e);
+
+    public delegate void DeleteFileCompleteHandler(MinusEngine sender, HttpStatusCode result);
+    public delegate void DeleteFileFailedHandler(MinusEngine sender, HttpStatusCode result, Exception e);
+
+    #endregion
+
+    #region Users
+
+    public delegate void GetUserCompleteHandler(MinusEngine sender, UserResult result);
+    public delegate void GetUserFailedHandler(MinusEngine sender, Exception e);
 
     public delegate void GetFollowersCompleteHandler(MinusEngine sender, IList<UserResult> result, PaginationResult pResult);
     public delegate void GetFollowersFailedHandler(MinusEngine sender, Exception e);
@@ -51,14 +78,32 @@ namespace MinusEngine
     public delegate void AddFolloweeCompleteHandler(MinusEngine sender, UserResult result);
     public delegate void AddFolloweeFailedHandler(MinusEngine sender, Exception e);
 
-    public delegate void GetLastMessageCompleteHandler(MinusEngine sender, List<MessageResult> result, PaginationResult pResult);
+    #endregion
+
+    #region Messages
+
+    public delegate void GetLastMessageCompleteHandler(MinusEngine sender, IList<MessageResult> result, PaginationResult pResult);
     public delegate void GetLastMessageFailedHandler(MinusEngine sender, Exception e);
 
-    public delegate void GetMessageCompleteHandler(MinusEngine sender, List<MessageResult> result, PaginationResult pResult);
+    public delegate void GetMessageCompleteHandler(MinusEngine sender, IList<MessageResult> result, PaginationResult pResult);
     public delegate void GetMessageFailedHandler(MinusEngine sender, Exception e);
 
     public delegate void SendMessageCompleteHandler(MinusEngine sender, MessageResult messageResult);
     public delegate void SendMessageFailedHandler(MinusEngine sender, Exception e);
+
+    #endregion
+
+    #region Feeds
+
+    public delegate void GetFolderFeedCompleteHandler(MinusEngine sender, IList<ExtendedFolderResult> result,
+    PaginationResult pResult);
+    public delegate void GetFolderFeedFailedHandler(MinusEngine sender, Exception e);
+
+    public delegate void GetMineFeedCompleteHandler(MinusEngine sender, IList<ExtendedFolderResult> result,
+        PaginationResult pResult);
+    public delegate void GetMineFeedFailedHandler(MinusEngine sender, Exception e);
+
+    #endregion
 
     #endregion
 
@@ -75,11 +120,17 @@ namespace MinusEngine
 
         #region Handler Events
 
+        #region oAuth
+
         public event oAuthCompleteHandler oAuthComplete;
         public event oAuthFailedHandler oAuthFailed;
 
-        public event UploadItemCompleteHandler UploadItemComplete;
-        public event UploadItemFailedHandler UploadItemFailed;
+        public event oAuthRefreshCompleteHandler oAuthRefreshComplete;
+        public event oAuthRefreshFailedHandler oAuthRefreshFailed;
+
+        #endregion
+
+        #region Folders
 
         public event CreateFolderCompleteHandler CreateFolderComplete;
         public event CreateFolderFailedHandler CreateFolderFailed;
@@ -93,6 +144,16 @@ namespace MinusEngine
         public event ModifyFolderCompleteHandler ModifyFolderComplete;
         public event ModifyFolderFailedHandler ModifyFolderFailed;
 
+        public event DeleteFolderCompleteHandler DeleteFolderComplete;
+        public event DeleteFolderFailedHandler DeleteFolderFailed;
+
+        #endregion
+
+        #region Files
+
+        public event UploadItemCompleteHandler UploadItemComplete;
+        public event UploadItemFailedHandler UploadItemFailed;
+
         public event GetFileCompleteHandler GetFileComplete;
         public event GetFileFailedHandler GetFileFailed;
 
@@ -102,6 +163,16 @@ namespace MinusEngine
         public event ModifyFileCompleteHandler ModifyFileComplete;
         public event ModifyFileFailedHandler ModifyFileFailed;
 
+        public event DeleteFileCompleteHandler DeleteFileComplete;
+        public event DeleteFileFailedHandler DeleteFileFailed;
+
+        #endregion
+
+        #region Users
+
+        public event GetUserCompleteHandler GetUserComplete;
+        public event GetUserFailedHandler GetUserFailed;
+
         public event GetFollowersCompleteHandler GetFollowersComplete;
         public event GetFollowersFailedHandler GetFollowersFailed;
 
@@ -110,6 +181,10 @@ namespace MinusEngine
 
         public event AddFolloweeCompleteHandler AddFolloweeComplete;
         public event AddFolloweeFailedHandler AddFolloweeFailed;
+
+        #endregion
+
+        #region Messages
 
         public event GetLastMessageCompleteHandler GetLastMessageComplete;
         public event GetLastMessageFailedHandler GetLastMessageFailed;
@@ -121,6 +196,20 @@ namespace MinusEngine
         public event SendMessageFailedHandler SendMessageFailed;
 
         #endregion
+
+        #region Feeds
+
+        public event GetFolderFeedCompleteHandler GetFolderFeedComplete;
+        public event GetFolderFeedFailedHandler GetFolderFeedFailed;
+
+        public event GetMineFeedCompleteHandler GetMineFeedComplete;
+        public event GetMineFeedFailedHandler GetMineFeedFailed;
+
+        #endregion
+
+        #endregion
+
+        #region Methods
 
         #region Authorization
 
@@ -143,6 +232,7 @@ namespace MinusEngine
                     }
                     catch (Exception e)
                     {
+                        Debug.WriteLine("oAuth operation failed: " + e.Message);
                         TriggeroAuthFailed(e);
                     }
                 }
@@ -188,7 +278,8 @@ namespace MinusEngine
                     }
                     catch (Exception e)
                     {
-                        TriggeroAuthFailed(e);
+                        Debug.WriteLine("Refresh oAuth operation failed: " + e.Message);
+                        TriggeroAuthRefreshFailed(e);
                     }
                 }
                 );
@@ -196,7 +287,7 @@ namespace MinusEngine
             catch (Exception e)
             {
                 Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
-                TriggeroAuthFailed(e);
+                TriggeroAuthRefreshFailed(e);
             }
 
             client.UploadStringCompleted += delegate(object sender, UploadStringCompletedEventArgs e)
@@ -204,13 +295,13 @@ namespace MinusEngine
                 if (e.Error != null)
                 {
                     Debug.WriteLine("Refresh oAuth operation failed: " + e.Error.Message);
-                    TriggeroAuthFailed(e.Error);
+                    TriggeroAuthRefreshFailed(e.Error);
                     return;
                 }
 
                 oAuthResult result = JsonConvert.DeserializeObject<oAuthResult>(e.Result);
                 Debug.WriteLine("Refresh oAuth operation successful: " + result);
-                TriggeroAuthComplete(result);
+                TriggeroAuthRefreshComplete(result);
             };
         }
 
@@ -237,6 +328,7 @@ namespace MinusEngine
                     }
                     catch (WebException e)
                     {
+                        Debug.WriteLine("Get Folder List operation failed: " + e.Message);
                         TriggerGetFolderListFailed(e);
                     }
                 }
@@ -279,15 +371,16 @@ namespace MinusEngine
             {
                 ThreadPool.QueueUserWorkItem(state =>
                  {
-                    try
-                    {
-                        client.DownloadStringAsync(getFolder);
-                    }
-                    catch (WebException e)
-                    {
-                        TriggerGetFolderFailed(e);
-                    }
-                }
+                     try
+                     {
+                         client.DownloadStringAsync(getFolder);
+                     }
+                     catch (WebException e)
+                     {
+                         Debug.WriteLine("Get Folder operation failed: " + e.Message);
+                         TriggerGetFolderFailed(e);
+                     }
+                 }
                 );
             }
             catch (Exception e)
@@ -308,7 +401,7 @@ namespace MinusEngine
                 FolderResult result = JsonConvert.DeserializeObject<FolderResult>(e.Result);
                 Debug.WriteLine("Get Folder operation successful: " + result);
                 TriggerGetFolderComplete(result);
-           };
+            };
         }
 
         #endregion
@@ -335,6 +428,7 @@ namespace MinusEngine
                     }
                     catch (Exception e)
                     {
+                        Debug.WriteLine("Modify Folder operation failed: " + e.Message);
                         TriggerModifyFolderFailed(e);
                     }
                 }
@@ -358,7 +452,7 @@ namespace MinusEngine
                 FolderResult result = JsonConvert.DeserializeObject<FolderResult>(e.Result);
                 Debug.WriteLine("Modify Folder operation successful: " + result);
                 TriggerModifyFolderComplete(result);
-           };
+            };
         }
 
         public void DeleteFolder(String folderID, String accessToken)
@@ -373,12 +467,22 @@ namespace MinusEngine
                 {
                     try
                     {
-                        client.deleteRequest(folder);
-                        Debug.WriteLine("Delete Folder operation successful");
+                        HttpStatusCode status = client.DeleteRequest(folder);
+                        if (status == HttpStatusCode.NoContent)
+                        {
+                            Debug.WriteLine("Delete Folder operation successful: " + status);
+                            TriggerDeleteFolderComplete(status);
+                        }
+                        else
+                        {
+                            Debug.WriteLine("Delete Folder operation failed: " + status);
+                            TriggerDeleteFolderFailed(status, null);
+                        }
                     }
                     catch (Exception e)
                     {
                         Debug.WriteLine("Delete Folder operation failed: " + e);
+                        TriggerDeleteFolderFailed(0, e);
                     }
                 }
                 );
@@ -386,6 +490,7 @@ namespace MinusEngine
             catch (Exception e)
             {
                 Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
+                TriggerDeleteFolderFailed(0, e);
             }
 
         }
@@ -415,9 +520,10 @@ namespace MinusEngine
                     }
                     catch (WebException e)
                     {
+                        Debug.WriteLine("Create Folder operation failed: " + e.Message);
                         TriggerCreateFolderFailed(e);
                     }
-               }
+                }
                );
             }
             catch (Exception e)
@@ -466,6 +572,7 @@ namespace MinusEngine
                     }
                     catch (WebException e)
                     {
+                        Debug.WriteLine("Get File operation failed: " + e.Message);
                         TriggerGetFileFailed(e);
                     }
                 }
@@ -510,6 +617,7 @@ namespace MinusEngine
                     }
                     catch (WebException e)
                     {
+                        Debug.WriteLine("Get File List operation failed: " + e.Message);
                         TriggerGetFileListFailed(e);
                     }
                 }
@@ -545,9 +653,9 @@ namespace MinusEngine
 
         #region Modify/Delete
 
-        public void ModifyFile(String fileID, String caption, String accessToken)
+        public void ModifyFile(String fileId, String caption, String accessToken)
         {
-            Uri file = new Uri(FILES_URL + fileID + "?bearer_token=" + accessToken);
+            Uri file = new Uri(FILES_URL + fileId + "?bearer_token=" + accessToken);
 
             CookieAwareWebClient client = new CookieAwareWebClient();
             client.Headers["Content-Type"] = "application/x-www-form-urlencoded";
@@ -565,6 +673,7 @@ namespace MinusEngine
                     }
                     catch (Exception e)
                     {
+                        Debug.WriteLine("Modify File operation failed: " + e.Message);
                         TriggerModifyFileFailed(e);
                     }
                 }
@@ -593,7 +702,7 @@ namespace MinusEngine
 
         public void DeleteFile(String fileID, String accessToken)
         {
-            Uri folder = new Uri(FILES_URL + fileID + "?bearer_token=" + accessToken);
+            Uri file = new Uri(FILES_URL + fileID + "?bearer_token=" + accessToken);
 
             CookieAwareWebClient client = new CookieAwareWebClient();
 
@@ -603,13 +712,22 @@ namespace MinusEngine
                 {
                     try
                     {
-                        client.deleteRequest(folder);
-                        Debug.WriteLine("Delete File operation successful");
-
+                        HttpStatusCode status = client.DeleteRequest(file);
+                        if (status == HttpStatusCode.NoContent)
+                        {
+                            Debug.WriteLine("Delete File operation successful: " + status);
+                            TriggerDeleteFileComplete(status);
+                        }
+                        else
+                        {
+                            Debug.WriteLine("Delete File operation failed: " + status);
+                            TriggerDeleteFileFailed(status, null);
+                        }
                     }
                     catch (Exception e)
                     {
                         Debug.WriteLine("Delete File operation failed: " + e);
+                        TriggerDeleteFileFailed(0, e);
                     }
                 }
                 );
@@ -617,6 +735,7 @@ namespace MinusEngine
             catch (Exception e)
             {
                 Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
+                TriggerDeleteFileFailed(0, e);
             }
 
         }
@@ -704,15 +823,15 @@ namespace MinusEngine
 
 
 
-                        WebResponse response = request.GetResponse();                
+                        HttpWebResponse response = (HttpWebResponse)request.GetResponse();
                         Stream stream = response.GetResponseStream();
 
-                        if (stream != null)
+                        if (response.StatusCode == HttpStatusCode.OK && stream != null)
                         {
                             StreamReader reader = new StreamReader(stream);
                             string responseString = reader.ReadToEnd();
                             FileResult result = JsonConvert.DeserializeObject<FileResult>(responseString);
-                            Debug.WriteLine("UploadItem operation successful: " + result);
+                            Debug.WriteLine("Upload operation successful: " + result);
                             TriggerUploadItemComplete(result);
                         }
 
@@ -721,7 +840,7 @@ namespace MinusEngine
                     catch (Exception e)
                     {
 
-                        Debug.WriteLine("Upload Failed " + e.Message);
+                        Debug.WriteLine("Upload operation Failed " + e.Message);
                         TriggerUploadItemFailed(e);
                     }
 
@@ -743,6 +862,50 @@ namespace MinusEngine
 
         #region Gets
 
+        public  void GetUser(String username, String accessToken)
+        {
+            CookieAwareWebClient client = new CookieAwareWebClient();
+            client.Headers["Content-Type"] = "application/x-www-form-urlencoded";
+
+            Uri getUser = new Uri(USERS_URL + username + "?bearer_token=" + accessToken);
+
+            try
+            {
+                ThreadPool.QueueUserWorkItem(state =>
+                {
+                    try
+                    {
+                        client.DownloadStringAsync(getUser);
+                    }
+                    catch (WebException e)
+                    {
+                        Debug.WriteLine("Get User operation failed: " + e.Message);
+                        TriggerGetUserFailed(e);
+                    }
+                }
+                );
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
+                TriggerGetUserFailed(e);
+            }
+
+            client.DownloadStringCompleted += delegate(object sender, DownloadStringCompletedEventArgs e)
+            {
+                if (e.Error != null)
+                {
+                    Debug.WriteLine("Get User operation failed: " + e.Error.Message);
+                    TriggerGetUserFailed(e.Error);
+                    return;
+                }
+
+                UserResult result = JsonConvert.DeserializeObject<UserResult>(e.Result);
+                Debug.WriteLine("Get User operation successful: " + result);
+                TriggerGetUserComplete(result);
+            };
+        }
+
         public void GetFollowers(String username, String accessToken, Int32 pageNum)
         {
             CookieAwareWebClient client = new CookieAwareWebClient();
@@ -760,6 +923,7 @@ namespace MinusEngine
                     }
                     catch (WebException e)
                     {
+                        Debug.WriteLine("Get Followers operation failed: " + e.Message);
                         TriggerGetFollowersFailed(e);
                     }
                 }
@@ -780,16 +944,16 @@ namespace MinusEngine
                     return;
                 }
 
-                
+
                 PaginationResult paginationResult = JsonConvert.DeserializeObject<PaginationResult>(e.Result);
                 JObject resultSearch = JObject.Parse(e.Result);
                 IList<JToken> objectResults = resultSearch["results"].Children().ToList();
                 IList<UserResult> results = objectResults.Select(objectResult =>
                     JsonConvert.DeserializeObject<UserResult>(objectResult.ToString())).ToList();
-              
+
                 Debug.WriteLine("Get Followers operation successful: " + results);
                 TriggerGetFollowersComplete(results, paginationResult);
-            }; 
+            };
         }
 
         public void GetFollowing(String username, String accessToken, Int32 pageNum)
@@ -809,6 +973,7 @@ namespace MinusEngine
                     }
                     catch (WebException e)
                     {
+                        Debug.WriteLine("Get Following operation failed: " + e.Message);
                         TriggerGetFollowingFailed(e);
                     }
                 }
@@ -837,7 +1002,7 @@ namespace MinusEngine
 
                 Debug.WriteLine("Get Following operation successful: " + results);
                 TriggerGetFollowingComplete(results, paginationResult);
-            };  
+            };
         }
 
         #endregion
@@ -865,6 +1030,7 @@ namespace MinusEngine
                     }
                     catch (WebException e)
                     {
+                        Debug.WriteLine("Add Followee operation failed: " + e.Message);
                         TriggerAddFolloweeFailed(e);
                     }
                 }
@@ -916,6 +1082,7 @@ namespace MinusEngine
                     }
                     catch (WebException e)
                     {
+                        Debug.WriteLine("Get Last Message operation failed: " + e.Message);
                         TriggerGetLastMessageFailed(e);
                     }
                 }
@@ -939,7 +1106,7 @@ namespace MinusEngine
                 PaginationResult pResult = JsonConvert.DeserializeObject<PaginationResult>(e.Result);
                 JObject resultSearch = JObject.Parse(e.Result);
                 IList<JToken> objectResults = resultSearch["results"].Children().ToList();
-                List<MessageResult> results = objectResults.Select(objectResult =>
+                IList<MessageResult> results = objectResults.Select(objectResult =>
                     JsonConvert.DeserializeObject<MessageResult>(objectResult.ToString())).ToList();
                 Debug.WriteLine("Get Last Message operation successful: " + results);
                 TriggerGetLastMessageComplete(results, pResult);
@@ -963,6 +1130,7 @@ namespace MinusEngine
                     }
                     catch (WebException e)
                     {
+                        Debug.WriteLine("Get Message operation failed: " + e.Message);
                         TriggerGetMessageFailed(e);
                     }
                 }
@@ -986,7 +1154,7 @@ namespace MinusEngine
                 PaginationResult pResult = JsonConvert.DeserializeObject<PaginationResult>(e.Result);
                 JObject resultSearch = JObject.Parse(e.Result);
                 IList<JToken> objectResults = resultSearch["results"].Children().ToList();
-                List<MessageResult> results = objectResults.Select(objectResult =>
+                IList<MessageResult> results = objectResults.Select(objectResult =>
                     JsonConvert.DeserializeObject<MessageResult>(objectResult.ToString())).ToList();
                 Debug.WriteLine("Get Message operation successful: " + results);
                 TriggerGetMessageComplete(results, pResult);
@@ -994,6 +1162,8 @@ namespace MinusEngine
         }
 
         #endregion
+
+        #region Send
 
         public void SendMessage(String accessToken, String target, String message)
         {
@@ -1014,6 +1184,7 @@ namespace MinusEngine
                     }
                     catch (WebException e)
                     {
+                        Debug.WriteLine("Send Message operation failed: " + e.Message);
                         TriggerSendMessageFailed(e);
                     }
                 }
@@ -1042,6 +1213,112 @@ namespace MinusEngine
 
         #endregion
 
+        #endregion
+
+        #region Feeds
+
+        public void GetFolderFeed(String accessToken, Int32 pageNum)
+        {
+            CookieAwareWebClient client = new CookieAwareWebClient();
+            client.Headers["Content-Type"] = "application/x-www-form-urlencoded";
+
+            Uri getFeed = new Uri(ACTIVE_URL + "favorited?page=" + pageNum + "&bearer_token=" + accessToken);
+
+            try
+            {
+                ThreadPool.QueueUserWorkItem(state =>
+                {
+                    try
+                    {
+                        client.DownloadStringAsync(getFeed);
+
+                    }
+                    catch (WebException e)
+                    {
+                        TriggerGetFolderFeedFailed(e);
+                        Debug.WriteLine("Get Folder Feed operation failed: " + e);
+                    }
+                }
+                );
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
+                TriggerGetFolderFeedFailed(e);
+            }
+
+            client.DownloadStringCompleted += delegate(object sender, DownloadStringCompletedEventArgs e)
+            {
+                if (e.Error != null)
+                {
+                    Debug.WriteLine("Get Folder Feed operation failed: " + e.Error.Message);
+                    TriggerGetFolderFeedFailed(e.Error);
+                    return;
+                }
+
+                PaginationResult pResult = JsonConvert.DeserializeObject<PaginationResult>(e.Result);
+                JObject resultSearch = JObject.Parse(e.Result);
+                IList<JToken> objectResults = resultSearch["results"].Children().ToList();
+                IList<ExtendedFolderResult> results = objectResults.Select(objectSearch =>
+                    JsonConvert.DeserializeObject<ExtendedFolderResult>(objectSearch.ToString())).ToList();
+
+                Debug.WriteLine("Get Folder Feed operation successful: " + results);
+                TriggerGetFolderFeedComplete(results, pResult);
+            };
+        }
+
+        public void GetMineFeed(String accessToken, Int32 pageNum)
+        {
+            CookieAwareWebClient client = new CookieAwareWebClient();
+            client.Headers["Content-Type"] = "application/x-www-form-urlencoded";
+
+            Uri getFeed = new Uri(ACTIVE_URL + "mine?page=" + pageNum + "&bearer_token=" + accessToken);
+
+            try
+            {
+                ThreadPool.QueueUserWorkItem(state =>
+                {
+                    try
+                    {
+                        client.DownloadStringAsync(getFeed);
+
+                    }
+                    catch (WebException e)
+                    {
+                        TriggerGetMineFeedFailed(e);
+                        Debug.WriteLine("Get Mine Feed operation failed: " + e);
+                    }
+                }
+                );
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Failed to submit task to thread pool: " + e.Message);
+                TriggerGetMineFeedFailed(e);
+            }
+
+            client.DownloadStringCompleted += delegate(object sender, DownloadStringCompletedEventArgs e)
+            {
+                if (e.Error != null)
+                {
+                    Debug.WriteLine("Get Mine Feed operation failed: " + e.Error.Message);
+                    TriggerGetMineFeedFailed(e.Error);
+                    return;
+                }
+
+                PaginationResult pResult = JsonConvert.DeserializeObject<PaginationResult>(e.Result);
+                JObject resultSearch = JObject.Parse(e.Result);
+                IList<JToken> objectResults = resultSearch["results"].Children().ToList();
+                IList<ExtendedFolderResult> results = objectResults.Select(objectSearch =>
+                    JsonConvert.DeserializeObject<ExtendedFolderResult>(objectSearch.ToString())).ToList();
+
+                Debug.WriteLine("Get Mine Feed operation successful: " + results);
+                TriggerGetMineFeedComplete(results, pResult);
+            };
+        }
+
+        #endregion
+
         #region Helpers
 
         private static void PushData(Stream input, Stream output, byte[] imageBuffer)
@@ -1053,6 +1330,8 @@ namespace MinusEngine
                 output.Write(buffer, 0, bytesRead);
             }
         }
+
+        #endregion
 
         #endregion
 
@@ -1076,8 +1355,25 @@ namespace MinusEngine
             }
         }
 
+
+        private void TriggeroAuthRefreshComplete(oAuthResult result)
+        {
+            if (oAuthRefreshComplete != null)
+            {
+                oAuthRefreshComplete.Invoke(this, result);
+            }
+        }
+
+        private void TriggeroAuthRefreshFailed(Exception e)
+        {
+            if (oAuthRefreshFailed != null)
+            {
+                oAuthRefreshFailed.Invoke(this, e);
+            }
+        }
+
         #endregion
-        
+
         #region Folders
 
         private void TriggerCreateFolderComplete(FolderResult result)
@@ -1147,6 +1443,22 @@ namespace MinusEngine
             }
         }
 
+
+        private void TriggerDeleteFolderComplete(HttpStatusCode result)
+        {
+            if (DeleteFolderComplete != null)
+            {
+                DeleteFolderComplete.Invoke(this, result);
+            }
+        }
+
+        private void TriggerDeleteFolderFailed(HttpStatusCode result, Exception e)
+        {
+            if (DeleteFolderFailed != null)
+            {
+                DeleteFolderFailed.Invoke(this, result, e);
+            }
+        }
 
         #endregion
 
@@ -1219,9 +1531,43 @@ namespace MinusEngine
             }
         }
 
+
+        private void TriggerDeleteFileComplete(HttpStatusCode result)
+        {
+            if (DeleteFileComplete != null)
+            {
+                DeleteFileComplete.Invoke(this, result);
+            }
+        }
+
+        private void TriggerDeleteFileFailed(HttpStatusCode result, Exception e)
+        {
+            if (DeleteFileFailed != null)
+            {
+                DeleteFileFailed.Invoke(this, result, e);
+            }
+        }
+
         #endregion
-        
+
         #region Users
+
+        private void TriggerGetUserComplete(UserResult result)
+        {
+            if (GetUserComplete != null)
+            {
+                GetUserComplete.Invoke(this, result);
+            }
+        }
+
+        private void TriggerGetUserFailed(Exception e)
+        {
+            if (GetUserFailed != null)
+            {
+                GetUserFailed.Invoke(this, e);
+            }
+        }
+
 
         private void TriggerGetFollowersComplete(IList<UserResult> result, PaginationResult paginationResult)
         {
@@ -1272,12 +1618,12 @@ namespace MinusEngine
                 AddFolloweeFailed.Invoke(this, e);
             }
         }
-        
-        #endregion       
+
+        #endregion
 
         #region Messages
 
-        private void TriggerGetLastMessageComplete(List<MessageResult> result, PaginationResult pResult)
+        private void TriggerGetLastMessageComplete(IList<MessageResult> result, PaginationResult pResult)
         {
             if (GetLastMessageComplete != null)
             {
@@ -1294,7 +1640,7 @@ namespace MinusEngine
         }
 
 
-        private void TriggerGetMessageComplete(List<MessageResult> result, PaginationResult pResult)
+        private void TriggerGetMessageComplete(IList<MessageResult> result, PaginationResult pResult)
         {
             if (GetMessageComplete != null)
             {
@@ -1328,7 +1674,44 @@ namespace MinusEngine
         }
 
         #endregion
-        
+
+        #region Feeds
+
+        private void TriggerGetFolderFeedComplete(IList<ExtendedFolderResult> result, PaginationResult pResult)
+        {
+            if (GetFolderFeedComplete != null)
+            {
+                GetFolderFeedComplete.Invoke(this, result, pResult);
+            }
+        }
+
+        private void TriggerGetFolderFeedFailed(Exception e)
+        {
+            if (GetFolderFeedFailed != null)
+            {
+                GetFolderFeedFailed.Invoke(this, e);
+            }
+        }
+
+
+        private void TriggerGetMineFeedComplete(IList<ExtendedFolderResult> result, PaginationResult pResult)
+        {
+            if (GetMineFeedComplete != null)
+            {
+                GetMineFeedComplete.Invoke(this, result, pResult);
+            }
+        }
+
+        private void TriggerGetMineFeedFailed(Exception e)
+        {
+            if (GetMineFeedFailed != null)
+            {
+                GetMineFeedFailed.Invoke(this, e);
+            }
+        }
+
+        #endregion
+
         #endregion
     }
 }

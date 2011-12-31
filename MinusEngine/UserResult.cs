@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 
@@ -8,6 +6,27 @@ namespace MinusEngine
 {
     public class UserResult
     {
+        public UserResult(String username, String folders, String displayName, String description, String url,
+                          Int32 visits, String avatar, String fbUsername, String followers, Int32 karma,
+                          String following, Int32 shared, String fbProfileLink, String slug, String twitterScreenName)
+        {
+            Username = username;
+            Folders = folders;
+            DisplayName = displayName;
+            Description = description;
+            Url = url;
+            Visits = visits;
+            Avatar = avatar;
+            FbUsername = fbUsername;
+            Followers = followers;
+            Karma = karma;
+            Following = following;
+            Shared = shared;
+            FbProfileLink = fbProfileLink;
+            Slug = slug;
+            TwitterScreenName = twitterScreenName;
+        }
+
         #region Fields
 
         [JsonProperty("username")]
@@ -56,25 +75,6 @@ namespace MinusEngine
         public String TwitterScreenName { get; set; }
 
         #endregion
-
-        public UserResult(String username, String folders, String displayName, String description, String url, Int32 visits, String avatar, String fbUsername, String followers, Int32 karma, String following, Int32 shared, String fbProfileLink, String slug, String twitterScreenName)
-        {
-            Username = username;
-            Folders = folders;
-            DisplayName = displayName;
-            Description = description;
-            Url = url;
-            Visits = visits;
-            Avatar = avatar;
-            FbUsername = fbUsername;
-            Followers = followers;
-            Karma = karma;
-            Following = following;
-            Shared = shared;
-            FbProfileLink = fbProfileLink;
-            Slug = slug;
-            TwitterScreenName = twitterScreenName;  
-        }
 
         #region Low level overrides
 

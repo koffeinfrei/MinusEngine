@@ -6,28 +6,27 @@ namespace MinusEngine
 {
     public class FolderResult
     {
-        public FolderResult()
+        public FolderResult(String files, String viewCount, DateTime dateUpdated, String name, String creator, String url,
+                            String created, String[] itemOrdering, Int32 lastUpdatedAgo, Int32 createdAgo,
+                            String thumbnailUrl, Int32 fileCount, Boolean isPublic, String id)
         {
-
+            Files = files;
+            ViewCount = viewCount;
+            DateUpdated = dateUpdated;
+            Name = name;
+            Creator = creator;
+            URL = url;
+            Created = created;
+            ItemOrdering = itemOrdering;
+            LastUpdated = lastUpdatedAgo;
+            CreatedAgo = createdAgo;
+            ThumbnailUrl = thumbnailUrl;
+            FileCount = fileCount;
+            IsPublic = isPublic;
+            ID = id;
         }
 
-        public FolderResult(String files, String viewCount, String dateUpdated, String name, String creator, String url, String created, String[] itemOrdering, Int32 lastUpdatedAgo, Int32 createdAgo, String thumbnailUrl, Int32 fileCount, Boolean isPublic, String id)
-        {
-            this.Files = files;
-            this.ViewCount = viewCount;
-            this.DateUpdated = dateUpdated;
-            this.Name = name;
-            this.Creator = creator;
-            this.URL = url;
-            this.Created = created;
-            this.ItemOrdering = itemOrdering;
-            this.LastUpdated = lastUpdatedAgo;
-            this.CreatedAgo = createdAgo;
-            this.ThumbnailUrl = thumbnailUrl;
-            this.FileCount = fileCount;
-            this.IsPublic = isPublic;
-            this.ID = id;
-        }
+        #region Fields
 
         [JsonProperty("files")]
         public String Files { get; set; }
@@ -36,7 +35,7 @@ namespace MinusEngine
         public String ViewCount { get; set; }
 
         [JsonProperty("date_last_updated")]
-        public String DateUpdated { get; set; }
+        public DateTime DateUpdated { get; set; }
 
         [JsonProperty("name")]
         public String Name { get; set; }
@@ -71,30 +70,29 @@ namespace MinusEngine
         [JsonProperty("id")]
         public String ID { get; set; }
 
+        #endregion
+
         #region Low level overrides
+
         public override string ToString()
         {
             return new StringBuilder("FolderResult{")
-                .Append("Files=").Append(this.Files)
-                .Append(", ViewCount=").Append(this.ViewCount)
-                .Append(", DateLastUpdated=").Append
-                (this.DateUpdated)
-                .Append(", Name=").Append(this.Name)
-                .Append(", Creator=").Append(this.Creator)
-                .Append(", Url=").Append(this.URL)
-                .Append(", ItemOrder=").Append
-                (this.ItemOrdering)
-                .Append(", LastUpdatedAgo=").Append
-                (this.LastUpdated)
-                .Append(", CreatedAgo=").Append
-                (this.CreatedAgo)
-                .Append(", ThumbnailUrl=").Append
-                (this.ThumbnailUrl)
-                .Append(", FileCount=").Append(this.FileCount)
-                .Append(", IsPublic=").Append(this.IsPublic)
-                .Append(", ID=").Append(this.ID)
+                .Append("Files=").Append(Files)
+                .Append(", ViewCount=").Append(ViewCount)
+                .Append(", DateLastUpdated=").Append(DateUpdated)
+                .Append(", Name=").Append(Name)
+                .Append(", Creator=").Append(Creator)
+                .Append(", Url=").Append(URL)
+                .Append(", ItemOrder=").Append(ItemOrdering)
+                .Append(", LastUpdatedAgo=").Append(LastUpdated)
+                .Append(", CreatedAgo=").Append(CreatedAgo)
+                .Append(", ThumbnailUrl=").Append(ThumbnailUrl)
+                .Append(", FileCount=").Append(FileCount)
+                .Append(", IsPublic=").Append(IsPublic)
+                .Append(", ID=").Append(ID)
                 .Append('}').ToString();
         }
+
         #endregion
     }
 }

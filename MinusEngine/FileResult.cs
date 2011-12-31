@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 
@@ -8,12 +6,9 @@ namespace MinusEngine
 {
     public class FileResult
     {
-        
-        public FileResult()
-        {           
-        }
-
-        public FileResult(String mimetype, String uploaded, String name, String caption, String url, String urlPreview, String title, String urlThumbnailMedium, Int32 height, Int32 width, Int32 uploadedAgo, Int32 fileSize, String urlRawFile, String folder, String urlThumbnail, String fileID)
+        public FileResult(String mimetype, DateTime uploaded, String name, String caption, String url, String urlPreview,
+                          String title, String urlThumbnailMedium, Int32 height, Int32 width, Int32 uploadedAgo,
+                          Int32 fileSize, String urlRawFile, String folder, String urlThumbnail, String fileId)
         {
             Mimetype = mimetype;
             Uploaded = uploaded;
@@ -30,7 +25,7 @@ namespace MinusEngine
             UrlRawFile = urlRawFile;
             Folder = folder;
             UrlThumbnail = urlThumbnail;
-            FileID = fileID;
+            FileID = fileId;
         }
 
         #region Fields
@@ -39,7 +34,7 @@ namespace MinusEngine
         public String Mimetype { get; set; }
 
         [JsonProperty("uploaded")]
-        public String Uploaded { get; set; }
+        public DateTime Uploaded { get; set; }
 
         [JsonProperty("name")]
         public String Name { get; set; }
@@ -100,13 +95,11 @@ namespace MinusEngine
                 .Append(", UrlThumbnailMedium=").Append(UrlThumbnailMedium)
                 .Append(", Height=").Append(Height)
                 .Append(", Width=").Append(Width)
-                .Append(", UploadedAgo=").Append
-                (UploadedAgo)
+                .Append(", UploadedAgo=").Append(UploadedAgo)
                 .Append(", FileSize=").Append(FileSize)
                 .Append(", UrlRawFile=").Append(UrlRawFile)
                 .Append(", Folder=").Append(Folder)
-                .Append(", UrlThumbnail=").Append
-                (UrlThumbnail)
+                .Append(", UrlThumbnail=").Append(UrlThumbnail)
                 .Append(", FileId=").Append(FileID)
                 .Append('}').ToString();
         }
