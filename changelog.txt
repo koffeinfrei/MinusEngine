@@ -1,4 +1,10 @@
 MinusAPIv2 Changelog
+Version 1.0.0
+03-May-2012
+	* Fixed
+		* Removed deprecated values
+	* Added
+		* New values
 
 Version 0.2.3
 30-Dec-2011

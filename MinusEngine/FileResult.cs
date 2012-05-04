@@ -6,8 +6,8 @@ namespace MinusEngine
 {
     public class FileResult
     {
-        public FileResult(String mimetype, DateTime uploaded, String name, String caption, String url, String urlPreview,
-                          String title, String urlThumbnailMedium, Int32 height, Int32 width, Int32 uploadedAgo,
+        public FileResult(String mimetype, DateTime uploaded, String name, String caption, String url,
+                          String title, Int32 height, Int32 width, Int32 uploadedAgo,
                           Int32 fileSize, String urlRawFile, String folder, String urlThumbnail, String fileId)
         {
             Mimetype = mimetype;
@@ -15,9 +15,7 @@ namespace MinusEngine
             Name = name;
             Caption = caption;
             Url = url;
-            UrlPreview = urlPreview;
             Title = title;
-            UrlThumbnailMedium = urlThumbnailMedium;
             Height = height;
             Width = width;
             UploadedAgo = uploadedAgo;
@@ -45,14 +43,8 @@ namespace MinusEngine
         [JsonProperty("url")]
         public String Url { get; set; }
 
-        [JsonProperty("url_preview")]
-        public String UrlPreview { get; set; }
-
         [JsonProperty("title")]
         public String Title { get; set; }
-
-        [JsonProperty("url_thumbnail_medium")]
-        public String UrlThumbnailMedium { get; set; }
 
         [JsonProperty("height")]
         public Int32 Height { get; set; }
