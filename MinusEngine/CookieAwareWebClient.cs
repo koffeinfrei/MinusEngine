@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Net;
-using System.Collections;
 
-namespace BiasedBit.MinusEngine
+namespace MinusEngine
 {
     public class CookieAwareWebClient : WebClient
     {
@@ -26,6 +22,17 @@ namespace BiasedBit.MinusEngine
                 (request as HttpWebRequest).CookieContainer = m_container;
             }
             return request;
+        }
+
+        public HttpStatusCode DeleteRequest(Uri uri)
+        {
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
+            request.Method = "DELETE";
+            request.ContentType = "application/x-www-form-urlencoded";
+
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            response.Close();
+            return response.StatusCode;
         }
 
         public void clearCookies() {
